@@ -333,7 +333,7 @@ if (!$result) {
                                 MILIK BARBERSHOP.
                             -->
                             <img
-                                src="foto/qris.png"
+                                src="foto/qriss1.jpeg"
                                 alt="QRIS GHD Barbershop"
                                 class="img-fluid"
                                 style="width: 250px; height: 250px; object-fit: contain;"

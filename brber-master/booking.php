@@ -39,7 +39,7 @@ $barbers = mysqli_query($koneksi, "SELECT * FROM barbers");
                         <!-- Logo -->
                         <div class="col-xl-2 col-lg-2 col-md-1">
                             <div class="logo">
-                                <a href="index.php"><img src="assets/img/logo/logo.png" alt="Logo"></a>
+                                <a href="index.php"><img src="assets/img/logo/ChatGPT Image 20 Agu 2026, 08.49.26.png   " alt="Logo"></a>
                             </div>
                         </div>
                         <div class="col-xl-10 col-lg-10 col-md-10">

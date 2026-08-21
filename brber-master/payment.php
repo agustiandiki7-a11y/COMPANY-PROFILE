@@ -48,7 +48,7 @@ if (!$booking) {
 
                 <!-- Bagian Gambar QRIS -->
                 <div style="background: #fff; padding: 15px; border-radius: 10px; display: inline-block; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-                    <img src="../backend/foto/qris.png" alt="QRIS Code" style="width: 200px; height: 200px; object-fit: contain; display: block;">
+                    <img src="../backend/foto/qriss1.jpeg       " alt="QRIS Code" style="width: 200px; height: 200px; object-fit: contain; display: block;">
                     <p style="color: #333; font-size: 12px; margin-top: 8px; margin-bottom: 0; font-weight: bold;">Scan pakai m-Banking / E-Wallet</p>
                 </div>
 
