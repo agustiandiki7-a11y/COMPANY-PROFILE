@@ -1,24 +1,28 @@
 <?php
-// Mulai session dan proteksi halaman (harus login dulu)
-session_start();
-if (!isset($_SESSION['customer_id'])) {
-    header("Location: login.php");
-    exit;
-}
-
-// Sesuaikan jalur koneksi database
 include "../backend/connection.php";
 
-/* =========================
-   HELPER
-========================= */
-function e($value)
-{
-    return htmlspecialchars(isset($value) ? $value : '', ENT_QUOTES, 'UTF-8');
+$error = '';
+$success = '';
+if (isset($_POST['register'])) {
+    $name = mysqli_real_escape_string($koneksi, trim($_POST['name']));
+    $phone = mysqli_real_escape_string($koneksi, trim($_POST['phone']));
+    $password = password_hash(trim($_POST['password']), PASSWORD_DEFAULT);
+
+    $cek = mysqli_query($koneksi, "SELECT * FROM customers WHERE phone = '$phone'");
+    if (mysqli_num_rows($cek) > 0) {
+        $error = "Nomor HP sudah terdaftar! Silakan langsung login.";
+    } else {
+        $query = "INSERT INTO customers (name, phone, password) VALUES ('$name', '$phone', '$password')";
+        if (mysqli_query($koneksi, $query)) {
+            $success = "Registrasi berhasil! Silakan login.";
+        } else {
+            $error = "Gagal mendaftar, coba lagi.";
+        }
+    }
 }
 
 /* =========================
-   PROFILE (Untuk Header & Copyright)
+   PROFILE (Untuk Header & Footer)
 ========================= */
 $query_profile = mysqli_query($koneksi, "SELECT * FROM profile LIMIT 1");
 $p = $query_profile ? mysqli_fetch_assoc($query_profile) : false;
@@ -36,14 +40,9 @@ if (!$p) {
     ];
 }
 
-/* =========================
-   SERVICES & BARBERS (Untuk Form Dropdown)
-========================= */
-$services = mysqli_query($koneksi, "SELECT * FROM services");
-$barbers = mysqli_query($koneksi, "SELECT * FROM barbers");
-
-// Ambil tanggal yang dipilih user (jika ada) untuk cek kursi
-$selected_date = $_GET['date'] ?? date('Y-m-d');
+function e($value) {
+    return htmlspecialchars(isset($value) ? $value : '', ENT_QUOTES, 'UTF-8');
+}
 ?>
 
 <!doctype html>
@@ -51,7 +50,7 @@ $selected_date = $_GET['date'] ?? date('Y-m-d');
 <head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>Booking | <?php echo e(isset($p['name']) ? $p['name'] : 'Barbershop'); ?></title>
+    <title>Daftar Member | <?php echo e(isset($p['name']) ? $p['name'] : 'Barbershop'); ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- Favicon / Logo Tab -->
@@ -91,7 +90,6 @@ $selected_date = $_GET['date'] ?? date('Y-m-d');
             --font-head: 'Playfair Display', serif;
             --font-body: 'Montserrat', sans-serif;
             --transition-smooth: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            --primary-gold: #c5a059;
         }
 
         html { scroll-behavior: smooth; }
@@ -113,7 +111,7 @@ $selected_date = $_GET['date'] ?? date('Y-m-d');
         ::-webkit-scrollbar-track { background: var(--lux-black); }
         ::-webkit-scrollbar-thumb { background: var(--lux-gold); }
 
-        /* HEADER */
+        /* HEADER SAMA */
         .header-area {
             position: absolute !important; top: 0; left: 0; right: 0; width: 100%; z-index: 999;
         }
@@ -141,53 +139,26 @@ $selected_date = $_GET['date'] ?? date('Y-m-d');
             background: transparent !important; color: var(--lux-gold) !important; border: 1px solid var(--lux-gold) !important;
             padding: 10px 20px !important; font-size: 11px !important; font-weight: 600 !important; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 0; transition: var(--transition-smooth);
         }
-        .btn-lux-outline:hover { background: var(--lux-gold) !important; color: var(--lux-black) !important; box-shadow: 0 0 15px rgba(197, 160, 89, 0.4); }
+        .btn-lux-outline:hover { background: var(--lux-gold) !important; color: var(--lux-black) !important; }
         .btn-lux-solid {
             background: var(--lux-gold) !important; color: var(--lux-black) !important; border: 1px solid var(--lux-gold) !important;
             padding: 10px 20px !important; font-size: 11px !important; font-weight: 600 !important; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 0; transition: var(--transition-smooth);
         }
-        .btn-lux-solid:hover { background: transparent !important; color: var(--lux-gold) !important; box-shadow: 0 0 15px rgba(197, 160, 89, 0.4); }
 
-        /* MOBILE MENU */
-        .mobile_menu { width: 100%; }
-        .slicknav_menu { background: transparent !important; padding: 0 !important; margin: 0 !important; }
-        .slicknav_btn { background-color: transparent !important; margin: 0 !important; padding: 5px 0 !important; cursor: pointer; }
-        .slicknav_icon-bar { background-color: var(--lux-gold) !important; box-shadow: none !important; width: 28px !important; height: 3px !important; margin: 5px 0 !important; display: block; border-radius: 2px; }
-        .slicknav_nav { background: var(--lux-dark) !important; border: 1px solid rgba(197, 160, 89, 0.2) !important; border-radius: 4px; margin-top: 15px !important; text-align: left; position: absolute; width: 100%; right: 0; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
-        .slicknav_nav a { color: var(--lux-white) !important; font-family: var(--font-body) !important; font-size: 13px !important; text-transform: uppercase; letter-spacing: 1px; padding: 15px 20px !important; margin: 0 !important; border-bottom: 1px solid rgba(255,255,255,0.05); transition: var(--transition-smooth); }
-        .slicknav_nav a:hover { background: rgba(197, 160, 89, 0.1) !important; color: var(--lux-gold) !important; }
-
-        @media (max-width: 991px) {
-            .header-area .main-header { padding: 15px 20px !important; }
-            .header-sticky.sticky-bar { padding: 10px 20px !important; }
-            .header-area .logo a h3 { font-size: 18px !important; }
-        }
-
-        /* FORM BOOKING */
-        .booking-hero {
-            padding: 200px 0 80px 0;
+        /* AUTH CARD STYLE */
+        .auth-hero {
+            padding: 180px 0 60px 0;
             background: linear-gradient(180deg, var(--lux-black) 0%, var(--lux-dark) 100%);
             text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.02);
         }
-        .booking-hero span {
-            color: var(--lux-gold); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; font-family: var(--font-body); display: block; margin-bottom: 15px;
-        }
-        .booking-hero h2 {
-            font-size: 52px; font-weight: 600; text-transform: capitalize; margin: 0;
-        }
-
-        .lux-booking-card {
+        .lux-auth-card {
             background: var(--lux-surface);
-            padding: 50px;
-            border: 1px solid rgba(197, 160, 89, 0.15);
-            border-radius: 4px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-            margin-top: -40px;
-            position: relative;
-            z-index: 2;
+            padding: 45px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 6px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+            text-align: left;
         }
-
         .lux-form-label {
             font-family: var(--font-body);
             color: var(--lux-gold-light);
@@ -198,7 +169,6 @@ $selected_date = $_GET['date'] ?? date('Y-m-d');
             margin-bottom: 12px;
             display: block;
         }
-
         .lux-form-control {
             background: var(--lux-black);
             border: 1px solid rgba(255,255,255,0.08);
@@ -210,36 +180,17 @@ $selected_date = $_GET['date'] ?? date('Y-m-d');
             width: 100%;
             transition: var(--transition-smooth);
         }
-
         .lux-form-control:focus {
             background: #080808;
             border-color: var(--lux-gold);
             outline: none;
             box-shadow: 0 0 15px rgba(197, 160, 89, 0.15);
         }
-
-        .lux-form-control::placeholder { color: #555; }
-        .lux-form-control[readonly] { color: #888; cursor: not-allowed; }
-
-        select.lux-form-control {
-            appearance: none;
-            -webkit-appearance: none;
-            background-image: url('data:image/svg+xml;utf8,<svg fill="%23c5a059" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
-            background-repeat: no-repeat;
-            background-position-x: 96%;
-            background-position-y: 50%;
-        }
-
-        ::-webkit-calendar-picker-indicator {
-            filter: invert(70%) sepia(40%) saturate(400%) hue-rotate(350deg) brightness(95%) contrast(90%);
-            cursor: pointer;
-        }
-
-        .btn-booking-submit {
+        .btn-auth-submit {
             background: var(--lux-gold) !important;
             color: var(--lux-black) !important;
             border: 1px solid var(--lux-gold) !important;
-            padding: 18px !important;
+            padding: 16px !important;
             font-size: 13px !important;
             font-weight: 700 !important;
             letter-spacing: 2px;
@@ -249,17 +200,11 @@ $selected_date = $_GET['date'] ?? date('Y-m-d');
             margin-top: 15px;
             transition: var(--transition-smooth);
         }
-        .btn-booking-submit:hover {
+        .btn-auth-submit:hover {
             background: transparent !important;
             color: var(--lux-gold) !important;
-            box-shadow: 0 10px 20px rgba(197, 160, 89, 0.2);
+            box-shadow: 0 0 20px rgba(197, 160, 89, 0.3);
         }
-
-        @media (max-width: 767px) {
-            .lux-booking-card { padding: 30px 20px; }
-            .booking-hero h2 { font-size: 36px; }
-        }
-
         .lux-spinner {
             width: 80px; height: 80px; border: 2px solid rgba(197, 160, 89, 0.1);
             border-top-color: var(--lux-gold); border-radius: 50%; animation: spin 1s linear infinite;
@@ -285,8 +230,6 @@ $selected_date = $_GET['date'] ?? date('Y-m-d');
             <div class="main-header header-sticky">
                 <div class="container-fluid">
                     <div class="row align-items-center">
-
-                        <!-- LOGO -->
                         <div class="col-xl-3 col-lg-3 col-md-4 col-sm-5 col-5">
                             <div class="logo">
                                 <a href="index.php">
@@ -299,11 +242,8 @@ $selected_date = $_GET['date'] ?? date('Y-m-d');
                                 </a>
                             </div>
                         </div>
-
-                        <!-- NAVIGATION & BUTTONS -->
                         <div class="col-xl-9 col-lg-9 col-md-8 col-sm-7 col-7">
                             <div class="menu-main d-flex align-items-center justify-content-end w-100">
-                                
                                 <div class="main-menu f-right d-none d-lg-block">
                                     <nav>
                                         <ul id="navigation">
@@ -317,20 +257,13 @@ $selected_date = $_GET['date'] ?? date('Y-m-d');
                                         </ul>
                                     </nav>
                                 </div>
-                                
-                                <div class="header-right-actions f-right d-none d-lg-flex ml-30 align-items-center">
+                                <div class="header-right-actions f-right d-none d-lg-flex ml-30">
                                     <a href="langganan.php" class="btn btn-lux-outline">Langganan</a>
-                                    <span style="color: var(--lux-gold); font-size: 13px; font-weight: 600; margin-left: 10px;">
-                                        <i class="fas fa-user-circle"></i> <?= htmlspecialchars($_SESSION['customer_name']); ?>
-                                    </span>
-                                    <a href="logout.php" class="btn" style="background: #dc3545; color: #fff; padding: 10px 15px; font-size: 11px; font-weight: 600; text-transform: uppercase; border-radius: 0; margin-left: 8px;" onclick="return confirm('Yakin ingin keluar dari akun?')">Logout</a>
+                                    <a href="booking.php" class="btn btn-lux-solid">Booking</a>
                                 </div>
-
                                 <div class="mobile_menu d-block d-lg-none text-right"></div>
-                                
                             </div>
                         </div>
-                        
                     </div>
                 </div>
             </div>
@@ -338,109 +271,46 @@ $selected_date = $_GET['date'] ?? date('Y-m-d');
     </header>
 
     <main>
-        <!-- Hero Title Section -->
-        <div class="booking-hero">
-            <div class="container">
-                <span>Reservation</span>
-                <h2>Online Booking</h2>
-            </div>
-        </div>
+        <div class="auth-hero"></div>
 
-        <!-- Form Booking Section -->
         <div class="container pb-130">
             <div class="row justify-content-center">
-                <div class="col-xl-8 col-lg-9">
-                    
-                    <div class="lux-booking-card">
-                      <form action="booking_process.php" method="POST">
-                            
-                            <div class="form-group mb-4">
+                <div class="col-md-6">
+                    <div class="lux-auth-card">
+                        <span style="color: var(--lux-gold); font-weight: 600; letter-spacing: 3px; font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 8px;">New Account</span>
+                        <h2 style="font-size: 32px; margin-bottom: 25px;">Daftar Member</h2>
+
+                        <?php if($error): ?>
+                            <div class="alert alert-danger py-2 mb-3" style="font-size: 13px; background: rgba(220, 53, 69, 0.2); border: 1px solid #dc3545; color: #ff6b6b;">
+                                <i class="fas fa-exclamation-circle"></i> <?= $error; ?>
+                            </div>
+                        <?php endif; ?>
+                        <?php if($success): ?>
+                            <div class="alert alert-success py-2 mb-3" style="font-size: 13px; background: rgba(40, 167, 69, 0.2); border: 1px solid #28a745; color: #28a745;">
+                                <i class="fas fa-check-circle"></i> <?= $success; ?> <a href="login.php" style="color: #fff; text-decoration: underline;">Login sekarang</a>
+                            </div>
+                        <?php endif; ?>
+
+                        <form method="POST">
+                            <div class="mb-4">
                                 <label class="lux-form-label">Nama Lengkap</label>
-                                <input type="text" name="customer_name" class="lux-form-control" value="<?= htmlspecialchars($_SESSION['customer_name']); ?>" readonly required>
+                                <input type="text" name="name" class="lux-form-control" required placeholder="Masukkan nama lengkap Anda">
                             </div>
-
-                            <div class="form-group mb-4">
+                            <div class="mb-4">
                                 <label class="lux-form-label">No. HP / WhatsApp</label>
-                                <input type="text" name="customer_phone" class="lux-form-control" value="<?= htmlspecialchars($_SESSION['customer_phone']); ?>" readonly required>
+                                <input type="text" name="phone" class="lux-form-control" required placeholder="Contoh: 081234567890">
                             </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-4">
-                                    <label class="lux-form-label">Pilih Layanan</label>
-                                    <select name="service_id" class="lux-form-control" required>
-                                        <option value="" disabled selected>-- Pilih Layanan --</option>
-                                        <?php while ($s = mysqli_fetch_assoc($services)) : ?>
-                                            <option value="<?= $s['id_service']; ?>">
-                                                <?= htmlspecialchars($s['name']); ?> - Rp <?= number_format($s['price'], 0, ',', '.'); ?>
-                                            </option>
-                                        <?php endwhile; ?>
-                                    </select>
-                                </div>
-
-                                <div class="col-md-6 mb-4">
-                                    <label class="lux-form-label">Pilih Barber</label>
-                                    <select name="barber_id" class="lux-form-control" required>
-                                        <option value="" disabled selected>-- Pilih Barber --</option>
-                                        <?php while ($b = mysqli_fetch_assoc($barbers)) : ?>
-                                            <option value="<?= $b['id_barber']; ?>">
-                                                <?= htmlspecialchars($b['name']); ?>
-                                            </option>
-                                        <?php endwhile; ?>
-                                    </select>
-                                </div>
+                            <div class="mb-4">
+                                <label class="lux-form-label">Password</label>
+                                <input type="password" name="password" class="lux-form-control" required placeholder="Buat password akun Anda">
                             </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-4">
-                                    <label class="lux-form-label">Tanggal Booking</label>
-                                    <!-- Jika tanggal diubah, halaman reload otomatis untuk mengecek status kursi di tanggal tersebut -->
-                                    <input type="date" name="booking_date" id="bookingDate" class="lux-form-control" min="<?= date('Y-m-d'); ?>" value="<?= e($selected_date); ?>" required onchange="location.href='booking.php?date='+this.value">
-                                </div>
-
-                                <div class="col-md-6 mb-4">
-                                    <label class="lux-form-label">Jam Kunjungan</label>
-                                    <input type="time" name="booking_time" class="lux-form-control" required>
-                                </div>
-                            </div>
-
-                            <!-- PILIHAN NOMOR KURSI DENGAN INDIKATOR STATUS PENUH OTOMATIS -->
-                            <div class="row">
-                                <div class="col-md-12 mb-4">
-                                    <label class="lux-form-label">Pilih Nomor Kursi / Meja (Tanggal: <?= e($selected_date); ?>)</label>
-                                    <select name="chair_number" class="lux-form-control" required>
-                                        <option value="" disabled selected>-- Pilih Kursi Pangkas --</option>
-                                        
-                                        <?php
-                                        $daftar_kursi = [
-                                            "Kursi 01 - VIP Suite", 
-                                            "Kursi 02 - Classic Station", 
-                                            "Kursi 03 - Gentleman Spot", 
-                                            "Kursi 04 - Modern Express"
-                                        ];
-
-                                        foreach ($daftar_kursi as $kursi) {
-                                            // Cek ke database apakah kursi ini sudah dibooking pada tanggal tersebut
-                                            $q_cek = mysqli_query($koneksi, "SELECT * FROM bookings WHERE chair_number = '$kursi' AND booking_date = '$selected_date' AND status != 'Selesai'");
-                                            $is_booked = mysqli_num_rows($q_cek) > 0;
-
-                                            if ($is_booked) {
-                                                echo '<option value="" disabled style="color: #ff6b6b; background: #1a0000;">' . $kursi . ' - (PENUH / SUDAH DI-BOOKING)</option>';
-                                            } else {
-                                                echo '<option value="' . $kursi . '">' . $kursi . ' (Tersedia)</option>';
-                                            }
-                                        }
-                                        ?>
-                                    </select>
-                                    <small style="color: var(--lux-text); font-size: 11px; margin-top: 5px; display: block;">*Kursi yang berstatus penuh otomatis tidak dapat dipilih.</small>
-                                </div>
-                            </div>
-
-                            <button type="submit" name="submit_booking" class="btn btn-booking-submit">
-                                Konfirmasi Booking
-                            </button>
+                            <button type="submit" name="register" class="btn btn-auth-submit">Daftar Sekarang</button>
                         </form>
-                    </div>
 
+                        <p class="text-center mt-4 mb-0" style="font-size: 13px; color: var(--lux-text);">
+                            Sudah punya akun? <a href="login.php" style="color: var(--lux-gold); font-weight: 600;">Login di sini</a>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

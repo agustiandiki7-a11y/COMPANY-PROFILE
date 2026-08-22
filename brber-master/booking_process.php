@@ -2,58 +2,48 @@
 include "../backend/connection.php";
 
 if (isset($_POST['submit_booking'])) {
-    $customer_name  = trim($_POST['customer_name']);
-    $customer_phone = trim($_POST['customer_phone']);
-    $service_id     = (int)$_POST['service_id'];
-    $barber_id      = (int)$_POST['barber_id'];
-    $booking_date   = $_POST['booking_date'];
-    $booking_time   = $_POST['booking_time'];
+    // Amankan data dari form
+    $customer_name  = mysqli_real_escape_string($koneksi, trim($_POST['customer_name']));
+    $customer_phone = mysqli_real_escape_string($koneksi, trim($_POST['customer_phone']));
+    $service_id     = mysqli_real_escape_string($koneksi, trim($_POST['service_id']));
+    $barber_id      = mysqli_real_escape_string($koneksi, trim($_POST['barber_id']));
+    
+    // Gunakan pengecekan isset agar tidak muncul warning jika kosong
+    $chair_number   = isset($_POST['chair_number']) ? mysqli_real_escape_string($koneksi, trim($_POST['chair_number'])) : 'Kursi 01';
+    
+    $booking_date   = mysqli_real_escape_string($koneksi, trim($_POST['booking_date']));
+    $booking_time   = mysqli_real_escape_string($koneksi, trim($_POST['booking_time']));
 
-    if (empty($customer_name) || empty($customer_phone) || empty($service_id) || empty($barber_id) || empty($booking_date) || empty($booking_time)) {
-        exit("Semua data wajib diisi!");
+    // 1. Validasi Bentrok Kursi
+    $cek_bentrok = mysqli_query($koneksi, "
+        SELECT * FROM bookings 
+        WHERE chair_number = '$chair_number' 
+        AND booking_date = '$booking_date' 
+        AND booking_time = '$booking_time'
+    ");
+
+    if (mysqli_num_rows($cek_bentrok) > 0) {
+        echo "<script>
+                alert('Maaf, $chair_number pada tanggal dan jam tersebut sudah dibooking orang lain! Silakan pilih kursi atau waktu lain.');
+                window.history.back();
+              </script>";
+        exit();
     }
 
-    // 1. Ambil nama layanan & harga dari tabel `services`
-    $q_service = mysqli_query($koneksi, "SELECT name, price FROM services WHERE id_service = $service_id LIMIT 1");
-    $service   = mysqli_fetch_assoc($q_service);
-    if (!$service) exit("Layanan tidak valid.");
-    
-    $service_name = $service['name'];
-    $total_price  = (float)$service['price'];
+    // 2. Buat Kode Unik Booking & Simpan
+    $booking_code = "GHD-" . date('Ymd') . "-" . strtoupper(substr(md5(uniqid()), 0, 4));
 
-    // 2. Ambil nama barber dari tabel `barbers`
-    $q_barber = mysqli_query($koneksi, "SELECT name FROM barbers WHERE id_barber = $barber_id LIMIT 1");
-    $barber   = mysqli_fetch_assoc($q_barber);
-    if (!$barber) exit("Barber tidak valid.");
-    
-    $barber_name = $barber['name'];
+    $query = "INSERT INTO bookings (booking_code, customer_name, customer_phone, service_id, barber_id, chair_number, booking_date, booking_time, status) 
+              VALUES ('$booking_code', '$customer_name', '$customer_phone', '$service_id', '$barber_id', '$chair_number', '$booking_date', '$booking_time', 'Pending')";
 
-    // 3. Buat Kode Booking Unik
-    $booking_code = 'GHD-' . date('Ymd') . '-' . strtoupper(substr(md5(uniqid()), 0, 4));
-    $booking_status = 'pending_payment';
+    $execute = mysqli_query($koneksi, $query);
 
-    // 4. Simpan ke tabel `bookings`
-    $stmt_booking = mysqli_prepare($koneksi, "INSERT INTO bookings (booking_code, customer_name, customer_phone, service_name, barber_name, booking_date, booking_time, total_price, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    mysqli_stmt_bind_param($stmt_booking, "sssssssds", $booking_code, $customer_name, $customer_phone, $service_name, $barber_name, $booking_date, $booking_time, $total_price, $booking_status);
-    mysqli_stmt_execute($stmt_booking);
-    
-    // Ambil ID booking yang baru saja dimasukkan
-    $booking_id = mysqli_insert_id($koneksi);
-    mysqli_stmt_close($stmt_booking);
-
-    // 5. Simpan data tagihan ke tabel `payments` (Metode QRIS)[cite: 1]
-    $order_id = 'ORDER-' . $booking_code;
-    $payment_method = 'QRIS';
-    $payment_status = 'pending';
-
-    $stmt_payment = mysqli_prepare($koneksi, "INSERT INTO payments (booking_id, order_id, payment_method, amount, status) VALUES (?, ?, ?, ?, ?)");
-    mysqli_stmt_bind_param($stmt_payment, "issds", $booking_id, $order_id, $payment_method, $total_price, $payment_status);
-    mysqli_stmt_execute($stmt_payment);
-    mysqli_stmt_close($stmt_payment);
-
-    // 6. Alihkan ke halaman pembayaran QRIS dengan membawa kode booking
-    header("Location: payment.php?code=" . urlencode($booking_code));
-    exit();
+    if ($execute) {
+        header("Location: payment.php?code=" . $booking_code);
+        exit();
+    } else {
+        echo "<script>alert('Gagal memproses booking: " . mysqli_error($koneksi) . "'); window.history.back();</script>";
+    }
 } else {
     header("Location: booking.php");
     exit();

@@ -1,17 +1,16 @@
-
-<ul class="navbar-nav bg-gradient-dark sidebar sidebar-dark accordion";
+<ul class="navbar-nav bg-gradient-dark sidebar sidebar-dark accordion" ;
     id="accordionSidebar">
 
-<!-- Sidebar - Brand -->
-<a class="sidebar-brand d-flex align-items-center justify-content-center"
-   href="index.php">
+    <!-- Sidebar - Brand -->
+    <a class="sidebar-brand d-flex align-items-center justify-content-center"
+        href="index.php">
 
-    <div class="sidebar-brand-text">
-        GHD
-        <span>BARBERSHOP</span>
-    </div>
+        <div class="sidebar-brand-text">
+            GHD
+            <span>BARBERSHOP</span>
+        </div>
 
-</a>
+    </a>
     <!-- Divider -->
     <hr class="sidebar-divider my-0">
 
@@ -148,31 +147,31 @@
     </div>
 
     <!-- 8. Bookings -->
-<li class="nav-item">
+    <li class="nav-item">
 
-    <a class="nav-link" href="tabel_bookings.php">
+        <a class="nav-link" href="tabel_bookings.php">
 
-        <i class="fas fa-fw fa-calendar-check"></i>
+            <i class="fas fa-fw fa-calendar-check"></i>
 
-        <span>Bookings</span>
+            <span>Bookings</span>
 
-    </a>
+        </a>
 
-</li>
+    </li>
 
 
-<!-- 9. Payments -->
-<li class="nav-item">
+    <!-- 9. Payments -->
+    <li class="nav-item">
 
-    <a class="nav-link" href="tabel_payments.php">
+        <a class="nav-link" href="tabel_payments.php">
 
-        <i class="fas fa-fw fa-qrcode"></i>
+            <i class="fas fa-fw fa-qrcode"></i>
 
-        <span>Payments</span>
+            <span>Payments</span>
 
-    </a>
+        </a>
 
-</li>
+    </li>
 
 
     <!-- Divider -->
@@ -183,7 +182,7 @@
     <div class="text-center d-none d-md-inline">
 
         <button class="rounded-circle border-0"
-                id="sidebarToggle">
+            id="sidebarToggle">
         </button>
 
     </div>

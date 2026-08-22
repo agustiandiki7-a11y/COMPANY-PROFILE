@@ -1,31 +1,16 @@
 <?php
 include "../backend/connection.php";
-session_start();
 
-$error = '';
-if (isset($_POST['login'])) {
-    $phone = mysqli_real_escape_string($koneksi, trim($_POST['phone']));
-    $password = trim($_POST['password']);
-
-    $result = mysqli_query($koneksi, "SELECT * FROM customers WHERE phone = '$phone' LIMIT 1");
-    if (mysqli_num_rows($result) === 1) {
-        $row = mysqli_fetch_assoc($result);
-        if (password_verify($password, $row['password'])) {
-            $_SESSION['customer_id'] = $row['id_customer'];
-            $_SESSION['customer_name'] = $row['name'];
-            $_SESSION['customer_phone'] = $row['phone'];
-            header("Location: booking.php");
-            exit;
-        } else {
-            $error = "Password salah!";
-        }
-    } else {
-        $error = "Nomor HP belum terdaftar!";
-    }
+/* =========================
+   HELPER
+========================= */
+function e($value)
+{
+    return htmlspecialchars(isset($value) ? $value : '', ENT_QUOTES, 'UTF-8');
 }
 
 /* =========================
-   PROFILE (Untuk Header & Footer)
+   PROFILE (Untuk Header & Copyright)
 ========================= */
 $query_profile = mysqli_query($koneksi, "SELECT * FROM profile LIMIT 1");
 $p = $query_profile ? mysqli_fetch_assoc($query_profile) : false;
@@ -35,16 +20,12 @@ if (!$p) {
         'name' => 'GHB BARBERSHOP',
         'description' => 'Barbershop profesional dengan pelayanan terbaik.',
         'address' => 'Banjar, Jawa Barat',
-        'phone' => '-',
+        'phone' => '081234567890',
         'email' => '-',
         'instagram' => '#',
         'opening_hours' => '09:00 - 21:00',
         'logo' => ''
     ];
-}
-
-function e($value) {
-    return htmlspecialchars(isset($value) ? $value : '', ENT_QUOTES, 'UTF-8');
 }
 ?>
 
@@ -53,10 +34,10 @@ function e($value) {
 <head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>Login Pelanggan | <?php echo e(isset($p['name']) ? $p['name'] : 'Barbershop'); ?></title>
+    <title>Paket Langganan | <?php echo e(isset($p['name']) ? $p['name'] : 'Barbershop'); ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Favicon / Logo Tab -->
+    <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="../backend/foto/logo.ico">
     
     <!-- PREMIUM FONTS -->
@@ -79,7 +60,7 @@ function e($value) {
     <link rel="stylesheet" href="assets/css/nice-select.css">
     <link rel="stylesheet" href="assets/css/style.css">
 
-    <!-- CUSTOM PREMIUM LUXURY STYLING -->
+    <!-- CUSTOM LUXURY STYLING -->
     <style>
         :root {
             --lux-black: #050505;
@@ -87,7 +68,6 @@ function e($value) {
             --lux-surface: #121212;
             --lux-gold: #c5a059;
             --lux-gold-light: #e8d3a2;
-            --lux-gold-dim: rgba(197, 160, 89, 0.2);
             --lux-white: #f8f8f8;
             --lux-text: #a3a3a3;
             --font-head: 'Playfair Display', serif;
@@ -109,10 +89,6 @@ function e($value) {
             color: var(--lux-white) !important;
             letter-spacing: 0.5px;
         }
-
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--lux-black); }
-        ::-webkit-scrollbar-thumb { background: var(--lux-gold); }
 
         /* HEADER SAMA */
         .header-area {
@@ -148,66 +124,61 @@ function e($value) {
             padding: 10px 20px !important; font-size: 11px !important; font-weight: 600 !important; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 0; transition: var(--transition-smooth);
         }
 
-        /* AUTH CARD STYLE */
-        .auth-hero {
-            padding: 180px 0 60px 0;
-            background: linear-gradient(180deg, var(--lux-black) 0%, var(--lux-dark) 100%);
-            text-align: center;
-        }
-        .lux-auth-card {
+        /* HERO SUBSCRIPTION */
+        .sub-hero { padding: 200px 0 60px 0; background: linear-gradient(180deg, var(--lux-black) 0%, var(--lux-dark) 100%); text-align: center; }
+        .sub-hero span { color: var(--lux-gold); font-size: 12px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; display: block; margin-bottom: 15px; }
+        .sub-hero h2 { font-size: 48px; font-weight: 600; margin: 0; }
+
+        /* PRICING CARDS */
+        .lux-pricing-card {
             background: var(--lux-surface);
-            padding: 45px;
             border: 1px solid rgba(197, 160, 89, 0.2);
             border-radius: 6px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.7);
-            text-align: left;
-        }
-        .lux-form-label {
-            font-family: var(--font-body);
-            color: var(--lux-gold-light);
-            font-size: 12px;
-            font-weight: 500;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            margin-bottom: 12px;
-            display: block;
-        }
-        .lux-form-control {
-            background: var(--lux-black);
-            border: 1px solid rgba(255,255,255,0.08);
-            color: var(--lux-white);
-            font-family: var(--font-body);
-            font-size: 14px;
-            padding: 16px 20px;
-            border-radius: 2px;
-            width: 100%;
+            padding: 40px 30px;
+            text-align: center;
             transition: var(--transition-smooth);
+            height: 100%;
+            position: relative;
         }
-        .lux-form-control:focus {
-            background: #080808;
+        .lux-pricing-card:hover {
             border-color: var(--lux-gold);
-            outline: none;
-            box-shadow: 0 0 15px rgba(197, 160, 89, 0.15);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(197, 160, 89, 0.15);
         }
-        .btn-auth-submit {
-            background: var(--lux-gold) !important;
-            color: var(--lux-black) !important;
-            border: 1px solid var(--lux-gold) !important;
-            padding: 16px !important;
-            font-size: 13px !important;
-            font-weight: 700 !important;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            border-radius: 2px;
-            width: 100%;
-            margin-top: 15px;
-            transition: var(--transition-smooth);
+        .lux-pricing-card.featured {
+            background: linear-gradient(180deg, #16140f 0%, var(--lux-surface) 100%);
+            border: 2px solid var(--lux-gold);
         }
-        .btn-auth-submit:hover {
-            background: transparent !important;
-            color: var(--lux-gold) !important;
-            box-shadow: 0 0 20px rgba(197, 160, 89, 0.3);
+        .badge-popular {
+            position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+            background: var(--lux-gold); color: var(--lux-black); font-size: 10px;
+            font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+            padding: 4px 15px; border-radius: 20px;
         }
+        .price-tag {
+            font-family: var(--font-head);
+            font-size: 38px;
+            color: var(--lux-gold);
+            margin: 20px 0;
+        }
+        .features-list {
+            list-style: none; padding: 0; margin: 25px 0; text-align: left; font-size: 14px;
+        }
+        .features-list li {
+            padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); color: #ccc;
+        }
+        .features-list li i { color: var(--lux-gold); margin-right: 8px; }
+
+        .btn-sub {
+            background: transparent; color: var(--lux-gold); border: 1px solid var(--lux-gold);
+            padding: 12px 25px; font-weight: 700; font-size: 12px; letter-spacing: 1.5px;
+            text-transform: uppercase; width: 100%; border-radius: 2px; transition: var(--transition-smooth);
+            display: inline-block; text-decoration: none; text-align: center;
+        }
+        .btn-sub:hover, .lux-pricing-card.featured .btn-sub {
+            background: var(--lux-gold); color: var(--lux-black);
+        }
+
         .lux-spinner {
             width: 80px; height: 80px; border: 2px solid rgba(197, 160, 89, 0.1);
             border-top-color: var(--lux-gold); border-radius: 50%; animation: spin 1s linear infinite;
@@ -217,7 +188,7 @@ function e($value) {
 
 <body>
 
-    <!-- LUXURY PRELOADER -->
+    <!-- PRELOADER -->
     <div id="preloader-active" style="position: fixed; inset: 0; background: #050505; z-index: 999999; display: flex; align-items: center; justify-content: center; transition: opacity 0.8s ease; opacity: 1;">
         <div style="position: relative; width: 90px; height: 90px; display: flex; align-items: center; justify-content: center;">
             <div class="lux-spinner" style="position: absolute; width: 100%; height: 100%;"></div>
@@ -261,7 +232,7 @@ function e($value) {
                                     </nav>
                                 </div>
                                 <div class="header-right-actions f-right d-none d-lg-flex ml-30">
-                                    <a href="langganan.php" class="btn btn-lux-outline">Langganan</a>
+                                    <a href="langganan.php" class="btn btn-lux-outline active">Langganan</a>
                                     <a href="booking.php" class="btn btn-lux-solid">Booking</a>
                                 </div>
                                 <div class="mobile_menu d-block d-lg-none text-right"></div>
@@ -274,38 +245,69 @@ function e($value) {
     </header>
 
     <main>
-        <div class="auth-hero"></div>
+        <div class="sub-hero">
+            <div class="container">
+                <span>Exclusive Membership</span>
+                <h2>Paket Langganan VIP</h2>
+                <p style="color: var(--lux-text); max-width: 600px; margin: 15px auto 0 auto; font-size: 14px;">
+                    Nikmati potongan rambut sepuasnya dan layanan perawatan eksklusif setiap bulan tanpa antre dengan bergabung menjadi member VIP kami.
+                </p>
+            </div>
+        </div>
 
-        <div class="container pb-130">
-            <div class="row justify-content-center">
-                <div class="col-md-6">
-                    <div class="lux-auth-card">
-                        <span style="color: var(--lux-gold); font-weight: 600; letter-spacing: 3px; font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 8px;">Member Area</span>
-                        <h2 style="font-size: 32px; margin-bottom: 25px;">Login Pelanggan</h2>
-
-                        <?php if($error): ?>
-                            <div class="alert alert-danger py-2 mb-3" style="font-size: 13px; background: rgba(220, 53, 69, 0.2); border: 1px solid #dc3545; color: #ff6b6b;">
-                                <i class="fas fa-exclamation-circle"></i> <?= $error; ?>
-                            </div>
-                        <?php endif; ?>
-
-                        <form method="POST">
-                            <div class="mb-4">
-                                <label class="lux-form-label">No. HP / WhatsApp</label>
-                                <input type="text" name="phone" class="lux-form-control" required placeholder="Contoh: 081234567890">
-                            </div>
-                            <div class="mb-4">
-                                <label class="lux-form-label">Password</label>
-                                <input type="password" name="password" class="lux-form-control" required placeholder="Masukkan password Anda">
-                            </div>
-                            <button type="submit" name="login" class="btn btn-auth-submit">Masuk</button>
-                        </form>
-
-                        <p class="text-center mt-4 mb-0" style="font-size: 13px; color: var(--lux-text);">
-                            Belum punya akun? <a href="register.php" style="color: var(--lux-gold); font-weight: 600;">Daftar di sini</a>
-                        </p>
+        <!-- Pricing Packages Section -->
+        <div class="container pb-130" style="padding-top: 40px;">
+            <div class="row">
+                
+                <!-- Paket 1: Basic Gentleman -->
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="lux-pricing-card">
+                        <h3 style="font-size: 24px; margin-bottom: 10px;">Gentleman Pass</h3>
+                        <p style="font-size: 13px; color: var(--lux-text);">Cocok untuk perawatan rutin bulanan perorangan.</p>
+                        <div class="price-tag">Rp 150.000 <span style="font-size: 13px; color: var(--lux-text); font-family: var(--font-body);">/ bulan</span></div>
+                        <ul class="features-list">
+                            <li><i class="fas fa-check"></i> 2x Potong Rambut / Bulan</li>
+                            <li><i class="fas fa-check"></i> Free Hair Wash & Tonic</li>
+                            <li><i class="fas fa-check"></i> Prioritas Booking Jadwal</li>
+                            <li><i class="fas fa-times" style="color: #555;"></i> Free Pomade Premium</li>
+                        </ul>
+                        <a href="https://wa.me/<?php echo preg_replace('/[^0-9]/', '', $p['phone']); ?>?text=Halo%20Admin,%20saya%20ingin%20berlangganan%20Paket%20Gentleman%20Pass." target="_blank" class="btn-sub">Pilih Paket</a>
                     </div>
                 </div>
+
+                <!-- Paket 2: VIP Executive (Featured) -->
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="lux-pricing-card featured">
+                        <div class="badge-popular">Terlaris</div>
+                        <h3 style="font-size: 24px; margin-bottom: 10px;">Executive VIP</h3>
+                        <p style="font-size: 13px; color: var(--lux-text);">Solusi lengkap tampil rapi setiap pekan.</p>
+                        <div class="price-tag">Rp 300.000 <span style="font-size: 13px; color: var(--lux-text); font-family: var(--font-body);">/ bulan</span></div>
+                        <ul class="features-list">
+                            <li><i class="fas fa-check"></i> Bebas Potong Rambut Sebulan Penuh</li>
+                            <li><i class="fas fa-check"></i> Free Wash, Tonic & Hot Towel</li>
+                            <li><i class="fas fa-check"></i> Free 1 Pcs Pomade Premium/bln</li>
+                            <li><i class="fas fa-check"></i> Bebas Pilih Kursi & Barber Favorit</li>
+                        </ul>
+                        <a href="https://wa.me/<?php echo preg_replace('/[^0-9]/', '', $p['phone']); ?>?text=Halo%20Admin,%20saya%20ingin%20berlangganan%20Paket%20Executive%20VIP." target="_blank" class="btn-sub">Pilih Paket</a>
+                    </div>
+                </div>
+
+                <!-- Paket 3: Ultimate Grooming -->
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="lux-pricing-card">
+                        <h3 style="font-size: 24px; margin-bottom: 10px;">Ultimate Grooming</h3>
+                        <p style="font-size: 13px; color: var(--lux-text);">Paket Sultan untuk perawatan total tanpa batas.</p>
+                        <div class="price-tag">Rp 500.000 <span style="font-size: 13px; color: var(--lux-text); font-family: var(--font-body);">/ bulan</span></div>
+                        <ul class="features-list">
+                            <li><i class="fas fa-check"></i> Unlimited Haircut & Shaving</li>
+                            <li><i class="fas fa-check"></i> All Treatment (Hair Spa & Coloring)</li>
+                            <li><i class="fas fa-check"></i> Free 2 Pcs Pomade Premium/bln</li>
+                            <li><i class="fas fa-check"></i> VIP Lounge Access & Fast Track</li>
+                        </ul>
+                        <a href="https://wa.me/<?php echo preg_replace('/[^0-9]/', '', $p['phone']); ?>?text=Halo%20Admin,%20saya%20ingin%20berlangganan%20Paket%20Ultimate%20Grooming." target="_blank" class="btn-sub">Pilih Paket</a>
+                    </div>
+                </div>
+
             </div>
         </div>
     </main>
@@ -337,4 +339,4 @@ function e($value) {
         });
     </script>
 </body>
-</html>
+</html> 

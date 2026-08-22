@@ -1,17 +1,76 @@
-<a href="https://colorlib.com/wp/templates/"><img src="https://colorlib.com/wp/wp-content/uploads/sites/2/colorlib-push-logo.png" alt="Colorlib logo"></a>
-<h1 style="text-align:center;">Thank you for using our template!</h1>
-<p style="text-align:center;">For more awesome templates please visit <strong><a href="https://colorlib.com/wp/templates/">Colorlib</a></strong>.</p>
-<br>
-<p style="text-align:center; color:red;"><strong>Copyright information for the template can't be altered/removed unless you purchase a license.</strong>
+<?php
+include "../backend/connection.php";
+session_start();
 
-<p style="text-align:center;"><strong>Removing copyright information without the license will result in suspension of your hosting and/or domain name(s).</strong>
+$error = '';
+if (isset($_POST['login'])) {
+    $phone = mysqli_real_escape_string($koneksi, trim($_POST['phone']));
+    $password = trim($_POST['password']);
 
-<p style="text-align:center;"><strong>More information about the license is available <a href="https://colorlib.com/wp/licence/">here</a></strong>.</p>
-
-<style>
-img {
-  margin: 0 auto;
-  display: block;
-  margin-top: 20%;
+    $result = mysqli_query($koneksi, "SELECT * FROM customers WHERE phone = '$phone' LIMIT 1");
+    if (mysqli_num_rows($result) === 1) {
+        $row = mysqli_fetch_assoc($result);
+        if (password_verify($password, $row['password'])) {
+            $_SESSION['customer_id'] = $row['id_customer'];
+            $_SESSION['customer_name'] = $row['name'];
+            $_SESSION['customer_phone'] = $row['phone'];
+            header("Location: booking.php");
+            exit;
+        } else {
+            $error = "Password salah!";
+        }
+    } else {
+        $error = "Nomor HP belum terdaftar!";
+    }
 }
-</style>
+?>
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <title>Login Pelanggan | GHD Barbershop</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+    <style>
+        body { background: #050505; color: #a3a3a3; font-family: 'Montserrat', sans-serif; }
+        .login-card { background: #121212; border: 1px solid rgba(197, 160, 89, 0.2); padding: 40px; border-radius: 6px; margin-top: 100px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+        .form-control { background: #050505; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; }
+        .form-control:focus { background: #080808; border-color: #c5a059; color: #fff; box-shadow: none; }
+        .btn-gold { background: #c5a059; color: #050505; font-weight: 700; width: 100%; padding: 15px; text-transform: uppercase; border: none; letter-spacing: 2px; }
+        .btn-gold:hover { background: #e8d3a2; }
+        h2 { font-family: 'Playfair Display', serif; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-5">
+                <div class="login-card">
+                    <div class="text-center mb-4">
+                        <span style="color: #c5a059; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;">Member Area</span>
+                        <h2>Login Pelanggan</h2>
+                    </div>
+                    <?php if($error): ?>
+                        <div class="alert alert-danger py-2" style="font-size: 13px;"><?= $error; ?></div>
+                    <?php endif; ?>
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="form-label" style="color: #e8d3a2; font-size: 12px; text-transform: uppercase;">No. HP / WhatsApp</label>
+                            <input type="text" name="phone" class="form-control" required placeholder="Contoh: 081234567890">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" style="color: #e8d3a2; font-size: 12px; text-transform: uppercase;">Password</label>
+                            <input type="password" name="password" class="form-control" required placeholder="Masukkan password">
+                        </div>
+                        <button type="submit" name="login" class="btn btn-gold">Masuk</button>
+                    </form>
+                    <p class="text-center mt-3" style="font-size: 13px;">Belum punya akun? <a href="register.php" style="color: #c5a059;">Daftar di sini</a></p>
+                    <p class="text-center mt-1"><a href="index.php" style="color: #666; font-size: 12px;">← Kembali ke Beranda</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -29,4 +29,8 @@
     <link href="css/sb-admin-2.min.css"
         rel="stylesheet">
     
+
+        <!-- Google Fonts yang Sama Persis dengan Frontend -->
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 </head>

@@ -1,27 +1,18 @@
 <?php
 include "../backend/connection.php";
-session_start();
 
-$error = '';
-if (isset($_POST['login'])) {
-    $phone = mysqli_real_escape_string($koneksi, trim($_POST['phone']));
-    $password = trim($_POST['password']);
+$code = trim($_GET['code'] ?? '');
+if ($code === '') {
+    header('Location: index.php');
+    exit;
+}
 
-    $result = mysqli_query($koneksi, "SELECT * FROM customers WHERE phone = '$phone' LIMIT 1");
-    if (mysqli_num_rows($result) === 1) {
-        $row = mysqli_fetch_assoc($result);
-        if (password_verify($password, $row['password'])) {
-            $_SESSION['customer_id'] = $row['id_customer'];
-            $_SESSION['customer_name'] = $row['name'];
-            $_SESSION['customer_phone'] = $row['phone'];
-            header("Location: booking.php");
-            exit;
-        } else {
-            $error = "Password salah!";
-        }
-    } else {
-        $error = "Nomor HP belum terdaftar!";
-    }
+/* =========================
+   HELPER
+========================= */
+function e($value)
+{
+    return htmlspecialchars(isset($value) ? $value : '', ENT_QUOTES, 'UTF-8');
 }
 
 /* =========================
@@ -35,7 +26,7 @@ if (!$p) {
         'name' => 'GHB BARBERSHOP',
         'description' => 'Barbershop profesional dengan pelayanan terbaik.',
         'address' => 'Banjar, Jawa Barat',
-        'phone' => '-',
+        'phone' => '081234567890',
         'email' => '-',
         'instagram' => '#',
         'opening_hours' => '09:00 - 21:00',
@@ -43,8 +34,24 @@ if (!$p) {
     ];
 }
 
-function e($value) {
-    return htmlspecialchars(isset($value) ? $value : '', ENT_QUOTES, 'UTF-8');
+/* =========================
+   AMBIL DATA BOOKING, SERVICE & BARBER
+========================= */
+$stmt = mysqli_prepare($koneksi, "
+    SELECT b.*, s.name as service_name, s.price, bar.name as barber_name 
+    FROM bookings b 
+    LEFT JOIN services s ON b.service_id = s.id_service 
+    LEFT JOIN barbers bar ON b.barber_id = bar.id_barber 
+    WHERE b.booking_code = ? 
+    LIMIT 1
+");
+mysqli_stmt_bind_param($stmt, "s", $code);
+mysqli_stmt_execute($stmt);
+$booking = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+mysqli_stmt_close($stmt);
+
+if (!$booking) {
+    exit('Data booking tidak ditemukan.');
 }
 ?>
 
@@ -53,10 +60,10 @@ function e($value) {
 <head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>Login Pelanggan | <?php echo e(isset($p['name']) ? $p['name'] : 'Barbershop'); ?></title>
+    <title>Booking Sukses | <?php echo e(isset($p['name']) ? $p['name'] : 'Barbershop'); ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Favicon / Logo Tab -->
+    <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="../backend/foto/logo.ico">
     
     <!-- PREMIUM FONTS -->
@@ -79,7 +86,7 @@ function e($value) {
     <link rel="stylesheet" href="assets/css/nice-select.css">
     <link rel="stylesheet" href="assets/css/style.css">
 
-    <!-- CUSTOM PREMIUM LUXURY STYLING -->
+    <!-- CUSTOM LUXURY STYLING -->
     <style>
         :root {
             --lux-black: #050505;
@@ -87,7 +94,6 @@ function e($value) {
             --lux-surface: #121212;
             --lux-gold: #c5a059;
             --lux-gold-light: #e8d3a2;
-            --lux-gold-dim: rgba(197, 160, 89, 0.2);
             --lux-white: #f8f8f8;
             --lux-text: #a3a3a3;
             --font-head: 'Playfair Display', serif;
@@ -110,11 +116,7 @@ function e($value) {
             letter-spacing: 0.5px;
         }
 
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--lux-black); }
-        ::-webkit-scrollbar-thumb { background: var(--lux-gold); }
-
-        /* HEADER SAMA */
+        /* HEADER */
         .header-area {
             position: absolute !important; top: 0; left: 0; right: 0; width: 100%; z-index: 999;
         }
@@ -148,76 +150,111 @@ function e($value) {
             padding: 10px 20px !important; font-size: 11px !important; font-weight: 600 !important; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 0; transition: var(--transition-smooth);
         }
 
-        /* AUTH CARD STYLE */
-        .auth-hero {
-            padding: 180px 0 60px 0;
-            background: linear-gradient(180deg, var(--lux-black) 0%, var(--lux-dark) 100%);
-            text-align: center;
-        }
-        .lux-auth-card {
+        /* INVOICE CARD */
+        .success-hero { padding: 180px 0 50px 0; background: linear-gradient(180deg, var(--lux-black) 0%, var(--lux-dark) 100%); text-align: center; }
+        
+        .lux-receipt-card {
             background: var(--lux-surface);
-            padding: 45px;
+            padding: 50px;
             border: 1px solid rgba(197, 160, 89, 0.2);
-            border-radius: 6px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.7);
-            text-align: left;
+            border-radius: 8px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            position: relative;
         }
-        .lux-form-label {
-            font-family: var(--font-body);
-            color: var(--lux-gold-light);
-            font-size: 12px;
-            font-weight: 500;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            margin-bottom: 12px;
-            display: block;
-        }
-        .lux-form-control {
-            background: var(--lux-black);
-            border: 1px solid rgba(255,255,255,0.08);
-            color: var(--lux-white);
-            font-family: var(--font-body);
+
+        .receipt-table td {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
             font-size: 14px;
-            padding: 16px 20px;
-            border-radius: 2px;
+        }
+
+        .btn-wa-confirm {
+            background: #25d366 !important;
+            color: #fff !important;
+            font-weight: 700;
+            padding: 14px;
+            border-radius: 4px;
             width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
             transition: var(--transition-smooth);
+            display: block;
+            text-align: center;
+            text-decoration: none;
+            margin-top: 25px;
         }
-        .lux-form-control:focus {
-            background: #080808;
-            border-color: var(--lux-gold);
-            outline: none;
-            box-shadow: 0 0 15px rgba(197, 160, 89, 0.15);
-        }
-        .btn-auth-submit {
+        .btn-wa-confirm:hover { background: #20ba5a !important; color: #fff; box-shadow: 0 5px 15px rgba(37, 211, 102, 0.3); }
+
+        .btn-print {
             background: var(--lux-gold) !important;
             color: var(--lux-black) !important;
-            border: 1px solid var(--lux-gold) !important;
-            padding: 16px !important;
-            font-size: 13px !important;
-            font-weight: 700 !important;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            border-radius: 2px;
+            font-weight: 700;
+            padding: 14px;
+            border-radius: 4px;
             width: 100%;
-            margin-top: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
             transition: var(--transition-smooth);
+            display: block;
+            text-align: center;
+            cursor: pointer;
+            margin-top: 12px;
         }
-        .btn-auth-submit:hover {
+        .btn-print:hover { background: transparent !important; color: var(--lux-gold) !important; border: 1px solid var(--lux-gold); }
+
+        .btn-home-back {
             background: transparent !important;
             color: var(--lux-gold) !important;
-            box-shadow: 0 0 20px rgba(197, 160, 89, 0.3);
+            border: 1px solid var(--lux-gold) !important;
+            font-weight: 600;
+            padding: 14px;
+            border-radius: 4px;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: var(--transition-smooth);
+            display: block;
+            text-align: center;
+            text-decoration: none;
+            margin-top: 12px;
         }
+        .btn-home-back:hover { background: var(--lux-gold) !important; color: var(--lux-black) !important; }
+
         .lux-spinner {
             width: 80px; height: 80px; border: 2px solid rgba(197, 160, 89, 0.1);
             border-top-color: var(--lux-gold); border-radius: 50%; animation: spin 1s linear infinite;
+        }
+
+        /* CSS KHUSUS CETAK/PRINT (HANYA STRUK YANG TERCETAK) */
+        @media print {
+            body { background: #fff !important; color: #000 !important; }
+            header, footer, .header-area, .success-hero, .btn-wa-confirm, .btn-print, .btn-home-back {
+                display: none !important;
+            }
+            .lux-receipt-card {
+                background: #fff !important;
+                border: 2px solid #000 !important;
+                box-shadow: none !important;
+                color: #000 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 20px !important;
+            }
+            .lux-receipt-card h2, .lux-receipt-card span, .lux-receipt-card td, .lux-receipt-card strong {
+                color: #000 !important;
+            }
+            .receipt-table td {
+                border-bottom: 1px solid #ccc !important;
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <!-- LUXURY PRELOADER -->
+    <!-- PRELOADER -->
     <div id="preloader-active" style="position: fixed; inset: 0; background: #050505; z-index: 999999; display: flex; align-items: center; justify-content: center; transition: opacity 0.8s ease; opacity: 1;">
         <div style="position: relative; width: 90px; height: 90px; display: flex; align-items: center; justify-content: center;">
             <div class="lux-spinner" style="position: absolute; width: 100%; height: 100%;"></div>
@@ -274,37 +311,77 @@ function e($value) {
     </header>
 
     <main>
-        <div class="auth-hero"></div>
+        <div class="success-hero"></div>
 
         <div class="container pb-130">
             <div class="row justify-content-center">
-                <div class="col-md-6">
-                    <div class="lux-auth-card">
-                        <span style="color: var(--lux-gold); font-weight: 600; letter-spacing: 3px; font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 8px;">Member Area</span>
-                        <h2 style="font-size: 32px; margin-bottom: 25px;">Login Pelanggan</h2>
+                <div class="col-xl-7 col-lg-8">
+                    
+                    <div class="lux-receipt-card text-center">
+                        <div style="margin-bottom: 20px;">
+                            <i class="fas fa-check-circle" style="font-size: 65px; color: #28a745;"></i>
+                        </div>
+                        <span style="color: var(--lux-gold); font-weight: 600; letter-spacing: 3px; font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 5px;">Reservasi Berhasil</span>
+                        <h2 style="font-size: 36px; margin-bottom: 30px;">Bukti Pemesanan</h2>
 
-                        <?php if($error): ?>
-                            <div class="alert alert-danger py-2 mb-3" style="font-size: 13px; background: rgba(220, 53, 69, 0.2); border: 1px solid #dc3545; color: #ff6b6b;">
-                                <i class="fas fa-exclamation-circle"></i> <?= $error; ?>
-                            </div>
-                        <?php endif; ?>
+                        <!-- Detail Struk / Invoice -->
+                        <div style="background: var(--lux-black); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 25px; text-align: left; margin-bottom: 30px;" class="invoice-box-inner">
+                            <table class="table table-borderless text-white mb-0 receipt-table">
+                                <tr>
+                                    <td style="color: var(--lux-text); width: 45%;">Kode Booking</td>
+                                    <td>: <strong style="color: var(--lux-gold); font-family: monospace; font-size: 16px;"><?= e($booking['booking_code']); ?></strong></td>
+                                </tr>
+                                <tr>
+                                    <td style="color: var(--lux-text);">Nama Pelanggan</td>
+                                    <td>: <strong><?= e($booking['customer_name']); ?></strong></td>
+                                </tr>
+                                <tr>
+                                    <td style="color: var(--lux-text);">No. WhatsApp</td>
+                                    <td>: <?= e($booking['customer_phone']); ?></td>
+                                </tr>
+                                <tr>
+                                    <td style="color: var(--lux-text);">Layanan Pilihan</td>
+                                    <td>: <?= e($booking['service_name'] ?? 'Layanan Barbershop'); ?></td>
+                                </tr>
+                                <tr>
+                                    <td style="color: var(--lux-text);">Barber</td>
+                                    <td>: <?= e($booking['barber_name'] ?? 'Pilih Barber Professional'); ?></td>
+                                </tr>
+                                <tr>
+                                    <td style="color: var(--lux-text);">Nomor Kursi</td>
+                                    <td>: <strong style="color: var(--lux-gold); font-size: 15px;"><?= e($booking['chair_number'] ?? 'Kursi 01'); ?></strong></td>
+                                </tr>
+                                <tr>
+                                    <td style="color: var(--lux-text);">Jadwal Kunjungan</td>
+                                    <td>: <span style="color: var(--lux-gold-light);"><?= date('d M Y', strtotime($booking['booking_date'])); ?> pukul <?= e($booking['booking_time']); ?></span></td>
+                                </tr>
+                                <tr>
+                                    <td style="color: var(--lux-text); font-weight: bold;">Status Pembayaran</td>
+                                    <td>: <span class="badge bg-success" style="padding: 6px 12px; font-size: 12px; letter-spacing: 1px;">LUNAS (QRIS)</span></td>
+                                </tr>
+                            </table>
+                        </div>
 
-                        <form method="POST">
-                            <div class="mb-4">
-                                <label class="lux-form-label">No. HP / WhatsApp</label>
-                                <input type="text" name="phone" class="lux-form-control" required placeholder="Contoh: 081234567890">
-                            </div>
-                            <div class="mb-4">
-                                <label class="lux-form-label">Password</label>
-                                <input type="password" name="password" class="lux-form-control" required placeholder="Masukkan password Anda">
-                            </div>
-                            <button type="submit" name="login" class="btn btn-auth-submit">Masuk</button>
-                        </form>
+                        <!-- Tombol Aksi -->
+                        <?php 
+                            $wa_msg = "Halo Admin " . $p['name'] . ", saya ingin mengkonfirmasi jadwal booking dengan Kode: " . $booking['booking_code'] . " atas nama " . $booking['customer_name'] . " di " . ($booking['chair_number'] ?? 'Kursi 01') . " untuk tanggal " . $booking['booking_date'] . " pukul " . $booking['booking_time'] . ". Terima kasih!";
+                            $wa_link = "https://wa.me/" . preg_replace('/[^0-9]/', '', $p['phone']) . "?text=" . urlencode($wa_msg);
+                        ?>
+                        
+                        <a href="<?= $wa_link; ?>" target="_blank" class="btn-wa-confirm">
+                            <i class="fab fa-whatsapp" style="font-size: 18px; margin-right: 8px;"></i> Kirim Konfirmasi ke WhatsApp
+                        </a>
 
-                        <p class="text-center mt-4 mb-0" style="font-size: 13px; color: var(--lux-text);">
-                            Belum punya akun? <a href="register.php" style="color: var(--lux-gold); font-weight: 600;">Daftar di sini</a>
-                        </p>
+                        <!-- Tombol Cetak / Print -->
+                        <button onclick="window.print()" class="btn-print">
+                            <i class="fas fa-print" style="margin-right: 8px;"></i> Cetak Bukti Pembayaran
+                        </button>
+
+                        <a href="index.php" class="btn-home-back">
+                            <i class="fas fa-home" style="margin-right: 6px;"></i> Kembali ke Beranda
+                        </a>
                     </div>
+
                 </div>
             </div>
         </div>
