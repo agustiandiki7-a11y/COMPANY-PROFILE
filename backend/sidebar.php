@@ -141,10 +141,7 @@
     <hr class="sidebar-divider">
 
 
-    <!-- Heading -->
-    <div class="sidebar-heading">
-        Account
-    </div>
+    
 
     <!-- 8. Bookings -->
     <li class="nav-item">

@@ -333,13 +333,13 @@ if (!$booking) {
             }
         });
 
-        // Pengaturan Waktu Mundur 1 Menit (60 Detik)
-        let timeLeft = 60;
+        // Pengaturan Waktu Mundur 30 Detik
+        let timeLeft = 30;
         const timerElement = document.getElementById('timer');
 
         const countdown = setInterval(function() {
-            let minutes = Math.floor(timeLeft / 60);
-            let seconds = timeLeft % 60;
+            let minutes = Math.floor(timeLeft / 30);
+            let seconds = timeLeft % 30;
 
             minutes = minutes < 10 ? '0' + minutes : minutes;
             seconds = seconds < 10 ? '0' + seconds : seconds;
@@ -349,7 +349,7 @@ if (!$booking) {
             if (timeLeft <= 0) {
                 clearInterval(countdown);
                 
-                // Setelah 1 menit habis, pindah otomatis ke success.php membawa kode booking
+                // Setelah 30 detik habis, pindah otomatis ke success.php membawa kode booking
                 const card = document.getElementById('cardContainer');
                 card.innerHTML = `
                     <span style="color: #28a745; font-weight: 600; letter-spacing: 3px; font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 8px;"><i class="fas fa-check-circle"></i> Berhasil</span>

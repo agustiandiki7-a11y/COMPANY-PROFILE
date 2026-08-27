@@ -2,13 +2,13 @@
 session_start();
 include "connection.php"; // Sesuaikan jalur koneksi di folder backend
 
-// Ambil semua data booking digabung dengan layanan dan barber
+// Ambil semua data booking digabung dengan layanan dan barber (diurutkan berdasarkan tanggal terbaru)
 $query = mysqli_query($koneksi, "
     SELECT b.*, s.name as service_name, s.price, bar.name as barber_name 
     FROM bookings b 
     LEFT JOIN services s ON b.service_id = s.id_service 
     LEFT JOIN barbers bar ON b.barber_id = bar.id_barber 
-    ORDER BY b.id_booking DESC
+    ORDER BY b.booking_date DESC
 ");
 ?>
 
@@ -18,24 +18,39 @@ $query = mysqli_query($koneksi, "
     <meta charset="utf-8">
     <title>Kelola Data Booking | Admin GHD Barbershop</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="assets/css/bootstrap.min.css"> <!-- Sesuaikan jalur CSS adminmu jika berbeda -->
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         body { background: #f4f6f9; font-family: 'Montserrat', sans-serif; }
-        .admin-card { background: #fff; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 25px; margin-top: 30px; }
+        .sidebar { background: #050505; min-height: 100vh; color: #fff; padding: 20px; position: fixed; width: 250px; }
+        .sidebar a { color: #a3a3a3; text-decoration: none; display: block; padding: 12px 15px; border-radius: 4px; margin-bottom: 5px; font-size: 14px; }
+        .sidebar a:hover, .sidebar a.active { background: #c5a059; color: #050505; font-weight: 600; }
+        .main-content { margin-left: 250px; padding: 40px; }
+        .admin-card { background: #fff; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 25px; }
         .table th { background: #050505; color: #c5a059; font-size: 13px; text-transform: uppercase; }
         .badge-status { padding: 6px 12px; font-size: 11px; font-weight: 600; border-radius: 4px; }
     </style>
 </head>
 <body>
 
-    <div class="container my-5">
+    <!-- Sidebar Admin -->
+    <div class="sidebar">
+        <h3 style="color: #c5a059; font-family: 'Playfair Display', serif; font-size: 20px; margin-bottom: 30px;">GHD Admin</h3>
+        <a href="admin_dashboard.php"><i class="fas fa-home mr-2"></i> Dashboard</a>
+        <a href="admin_bookings.php" class="active"><i class="fas fa-calendar-check mr-2"></i> Kelola Booking</a>
+        <a href="admin_services.php"><i class="fas fa-cut mr-2"></i> Kelola Layanan</a>
+        <a href="admin_barbers.php"><i class="fas fa-users mr-2"></i> Kelola Barber</a>
+        <hr style="border-color: rgba(255,255,255,0.1);">
+        <a href="../frontend/index.php" target="_blank"><i class="fas fa-globe mr-2"></i> Lihat Website</a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <span style="color: #c5a059; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;">Admin Panel</span>
                 <h2 style="font-weight: 700; color: #050505; margin: 0;">Kelola Data Booking & Kursi</h2>
             </div>
-            <a href="index.php" class="btn btn-dark btn-sm"><i class="fas fa-arrow-left"></i> Kembali ke Dashboard</a>
         </div>
 
         <div class="admin-card">
@@ -55,7 +70,7 @@ $query = mysqli_query($koneksi, "
                         </tr>
                     </thead>
                     <tbody>
-                        <?php 
+                        <?> 
                         $no = 1;
                         if(mysqli_num_rows($query) > 0):
                             while($row = mysqli_fetch_assoc($query)): 
@@ -76,17 +91,17 @@ $query = mysqli_query($koneksi, "
                                 <small class="text-muted">Pukul <?= htmlspecialchars($row['booking_time']); ?></small>
                             </td>
                             <td>
-                                <span class="badge bg-success badge-status"><?= htmlspecialchars($row['status']); ?></span>
+                                <span class="badge bg-success badge-status"><?= htmlspecialchars($row['status'] ?? 'Pending'); ?></span>
                             </td>
                         </tr>
-                        <?php 
+                        <?> 
                             endwhile; 
                         else:
                         ?>
                         <tr>
                             <td colspan="9" class="text-center py-4 text-muted">Belum ada data booking yang masuk.</td>
                         </tr>
-                        <?php endif; ?>
+                        <?> endif; ?>
                     </tbody>
                 </table>
             </div>
