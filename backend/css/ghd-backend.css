@@ -1,0 +1,121 @@
+:root {
+    --lux-black: #050505;
+    --lux-surface: #121212;
+    --lux-gold: #c5a059;
+    --lux-white: #f8f8f8;
+    --lux-text: #a3a3a3;
+}
+
+body { 
+    background: var(--lux-black) !important; 
+    color: var(--lux-text) !important; 
+    font-family: 'Montserrat', sans-serif !important; 
+}
+
+/* Tipografi */
+h1, h2, h3, h4, h5, h6, .card-header h6, .sidebar-brand-text { 
+    font-family: 'Playfair Display', serif !important; 
+    color: var(--lux-white) !important; 
+}
+
+/* Sidebar GHD */
+.sidebar {
+    background: linear-gradient(180deg, #080808 0%, #050505 100%) !important;
+    border-right: 1px solid rgba(197, 160, 89, 0.15);
+}
+.sidebar .sidebar-brand {
+    color: var(--lux-gold) !important;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+}
+.sidebar .sidebar-brand span {
+    color: var(--lux-white);
+}
+.sidebar .nav-item .nav-link {
+    color: var(--lux-text) !important;
+    transition: 0.3s;
+}
+.sidebar .nav-item .nav-link:hover, .sidebar .nav-item.active .nav-link {
+    color: var(--lux-gold) !important;
+    background: rgba(197, 160, 89, 0.08);
+}
+.sidebar .nav-item .nav-link i {
+    color: var(--lux-gold) !important;
+}
+.sidebar-divider {
+    border-top: 1px solid rgba(197, 160, 89, 0.15) !important;
+}
+
+/* Topbar GHD */
+.topbar {
+    background: #080808 !important;
+    border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+}
+.topbar .navbar-search .form-control {
+    background: #121212 !important;
+    color: #fff !important;
+    border: 1px solid rgba(197, 160, 89, 0.3) !important;
+}
+
+/* Kartu & Kotak Utama */
+.card {
+    background: var(--lux-surface) !important;
+    border: 1px solid rgba(197, 160, 89, 0.2) !important;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.8) !important;
+    border-radius: 6px !important;
+}
+.card-header {
+    background: #080808 !important;
+    border-bottom: 1px solid rgba(197, 160, 89, 0.2) !important;
+}
+
+/* Tabel Mewah GHD */
+.table {
+    color: var(--lux-text) !important;
+    background-color: var(--lux-surface) !important;
+}
+.table th, .table td {
+    border-color: rgba(197, 160, 89, 0.15) !important;
+    vertical-align: middle !important;
+}
+.table th {
+    color: var(--lux-gold) !important;
+    font-family: 'Playfair Display', serif !important;
+    letter-spacing: 1px;
+    background: #080808 !important;
+}
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(255, 255, 255, 0.02) !important;
+}
+.table-hover tbody tr:hover {
+    background-color: rgba(197, 160, 89, 0.05) !important;
+    color: var(--lux-white) !important;
+}
+
+/* Form & Input */
+.form-control {
+    background: #080808 !important;
+    color: #fff !important;
+    border: 1px solid rgba(197, 160, 89, 0.3) !important;
+}
+.form-control:focus {
+    border-color: var(--lux-gold) !important;
+    box-shadow: 0 0 10px rgba(197,160,89,0.3) !important;
+}
+
+/* Tombol Mewah GHD */
+.btn-primary, .btn-lux {
+    background: var(--lux-gold) !important;
+    color: var(--lux-black) !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    border: none !important;
+    letter-spacing: 1px !important;
+    font-size: 11px !important;
+    transition: 0.3s !important;
+}
+.btn-primary:hover, .btn-lux:hover {
+    background: #e8d3a2 !important;
+    box-shadow: 0 0 15px rgba(197,160,89,0.4) !important;
+    color: var(--lux-black) !important;
+}

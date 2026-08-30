@@ -1,400 +1,112 @@
 <?php
-require_once 'connection.php';
-
-$sql = "
-    SELECT
-        p.id,
-        p.order_id,
-        p.transaction_id,
-        p.payment_method,
-        p.amount,
-        p.status,
-        p.paid_at,
-        p.created_at,
-        b.booking_code,
-        b.customer_name,
-        b.customer_phone
-    FROM payments p
-    INNER JOIN bookings b ON p.booking_id = b.id
-    ORDER BY p.id DESC
-";
-
-$result = mysqli_query($koneksi, $sql);
-
-if (!$result) {
-    die("Query gagal: " . mysqli_error($koneksi));
+session_start();
+if (!isset($_SESSION['status']) || $_SESSION['status'] !== "login") {
+    header("Location: login.php?pesan=belum_login");
+    exit;
 }
+
+include "connection.php";
+// Mengambil data pembayaran atau booking yang masuk melalui sistem QRIS
+$query = mysqli_query($koneksi, "
+    SELECT b.*, s.name as service_name, s.price 
+    FROM bookings b 
+    LEFT JOIN services s ON b.service_id = s.id_service 
+    ORDER BY b.id DESC
+");
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Payments - GHD Barbershop</title>
-
-    <!-- Font Awesome -->
-    <link
-        href="vendor/fontawesome-free/css/all.min.css"
-        rel="stylesheet"
-    >
-
-    <!-- SB Admin 2 -->
-    <link
-        href="css/sb-admin-2.min.css"
-        rel="stylesheet"
-    >
-
-    <!-- DataTables -->
-    <link
-        href="vendor/datatables/dataTables.bootstrap4.min.css"
-        rel="stylesheet"
-    >
+    <meta charset="utf-8">
+    <title>Data Payments | GHD Barbershop</title>
+    <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="css/sb-admin-2.min.css" rel="stylesheet">
+    <link href="css/ghd-backend.css" rel="stylesheet">
+    <style>
+        :root { --lux-black: #050505; --lux-surface: #121212; --lux-gold: #c5a059; --lux-white: #f8f8f8; --lux-text: #a3a3a3; }
+        body { background: var(--lux-black) !important; color: var(--lux-text) !important; font-family: 'Montserrat', sans-serif; }
+        h1, h2, h3, h4, .card-header h6 { font-family: 'Playfair Display', serif; color: var(--lux-white) !important; }
+        .card { background: var(--lux-surface) !important; border: 1px solid rgba(197, 160, 89, 0.2) !important; box-shadow: 0 15px 35px rgba(0,0,0,0.8); }
+        .card-header { background: #080808 !important; border-bottom: 1px solid rgba(197, 160, 89, 0.2) !important; }
+        .table { color: var(--lux-text) !important; background-color: var(--lux-surface); }
+        .table th, .table td { border-color: rgba(197, 160, 89, 0.15) !important; vertical-align: middle; }
+        .table th { color: var(--lux-gold) !important; font-family: 'Playfair Display', serif; letter-spacing: 1px; background: #080808; }
+        .table-striped tbody tr:nth-of-type(odd) { background-color: rgba(255, 255, 255, 0.02); }
+        .table-hover tbody tr:hover { background-color: rgba(197, 160, 89, 0.05); color: var(--lux-white); }
+        
+        .badge-approved { background: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid #28a745; padding: 4px 12px; border-radius: 30px; font-weight: 600; font-size: 10px; text-transform: uppercase; }
+        .badge-pending { background: rgba(255, 193, 7, 0.15); color: #ffc107; border: 1px solid #ffc107; padding: 4px 12px; border-radius: 30px; font-weight: 600; font-size: 10px; text-transform: uppercase; }
+        .badge-cancelled { background: rgba(220, 53, 69, 0.15); color: #dc3545; border: 1px solid #dc3545; padding: 4px 12px; border-radius: 30px; font-weight: 600; font-size: 10px; text-transform: uppercase; }
+    </style>
 </head>
-
 <body id="page-top">
-
     <div id="wrapper">
-
-        <!-- SIDEBAR -->
-        <?php include 'sidebar.php'; ?>
-
-        <!-- CONTENT WRAPPER -->
-        <div id="content-wrapper" class="d-flex flex-column">
-
+        <?php include "sidebar.php"; ?>
+        <div id="content-wrapper" class="d-flex flex-column" style="background: var(--lux-black);">
             <div id="content">
+                <?php include "topbar.php"; ?>
 
-                <!-- TOPBAR -->
-                <?php include 'topbar.php'; ?>
-
-                <!-- MAIN CONTENT -->
-                <div class="container-fluid">
-
-                    <!-- PAGE TITLE -->
+                <div class="container-fluid py-4">
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                        <h1 class="h3 mb-0 text-gray-800">
-                            Payments
-                        </h1>
+                        <div>
+                            <span style="color: var(--lux-gold); font-size: 11px; letter-spacing: 3px; text-transform: uppercase;">Transaction Logs</span>
+                            <h1 class="h3 mb-0" style="color: var(--lux-white);">Data Payments (QRIS / Tagihan)</h1>
+                        </div>
                     </div>
 
-                    <!-- PAYMENT CARD -->
                     <div class="card shadow mb-4">
-
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">
-                                <i class="fas fa-qrcode mr-2"></i>
-                                Data Pembayaran QRIS
-                            </h6>
+                            <h6 class="m-0 font-weight-bold" style="color: var(--lux-gold);">Riwayat Pembayaran Kustomer</h6>
                         </div>
-
                         <div class="card-body">
-
                             <div class="table-responsive">
-                                <table
-                                    class="table table-bordered"
-                                    id="paymentTable"
-                                    width="100%"
-                                    cellspacing="0"
-                                >
+                                <table class="table table-striped table-hover" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
                                             <th>No</th>
                                             <th>Kode Booking</th>
-                                            <th>Customer</th>
-                                            <th>No. HP</th>
-                                            <th>Order ID</th>
+                                            <th>Nama Kustomer</th>
+                                            <th>Layanan</th>
+                                            <th>Total Harga</th>
                                             <th>Metode</th>
-                                            <th>Total</th>
-                                            <th>Status</th>
-                                            <th>Dibayar</th>
-                                            <th>Aksi</th>
+                                            <th>Status Pembayaran</th>
                                         </tr>
                                     </thead>
-
                                     <tbody>
-                                        <?php
-                                        $no = 1;
-
-                                        while ($row = mysqli_fetch_assoc($result)):
+                                        <?php $no = 1; while ($row = mysqli_fetch_assoc($query)) : 
+                                            $status = strtolower(trim($row['status'] ?? 'pending'));
                                         ?>
-                                            <tr>
-                                                <!-- NO -->
-                                                <td>
-                                                    <?= $no++; ?>
-                                                </td>
-
-                                                <!-- BOOKING CODE -->
-                                                <td>
-                                                    <strong class="text-primary">
-                                                        <?= htmlspecialchars($row['booking_code']); ?>
-                                                    </strong>
-                                                </td>
-
-                                                <!-- CUSTOMER -->
-                                                <td>
-                                                    <?= htmlspecialchars($row['customer_name']); ?>
-                                                </td>
-
-                                                <!-- PHONE -->
-                                                <td>
-                                                    <?= htmlspecialchars($row['customer_phone']); ?>
-                                                </td>
-
-                                                <!-- ORDER ID -->
-                                                <td>
-                                                    <?= htmlspecialchars($row['order_id']); ?>
-                                                </td>
-
-                                                <!-- PAYMENT METHOD -->
-                                                <td>
-                                                    <span class="badge badge-primary">
-                                                        <i class="fas fa-qrcode mr-1"></i>
-                                                        <?= htmlspecialchars(strtoupper($row['payment_method'])); ?>
-                                                    </span>
-                                                </td>
-
-                                                <!-- AMOUNT -->
-                                                <td>
-                                                    <strong>
-                                                        Rp <?= number_format($row['amount'], 0, ',', '.'); ?>
-                                                    </strong>
-                                                </td>
-
-                                                <!-- STATUS -->
-                                                <td>
-                                                    <?php if ($row['status'] === 'paid'): ?>
-
-                                                        <span class="badge badge-success">
-                                                            <i class="fas fa-check mr-1"></i>
-                                                            Lunas
-                                                        </span>
-
-                                                    <?php elseif ($row['status'] === 'failed'): ?>
-
-                                                        <span class="badge badge-danger">
-                                                            <i class="fas fa-times mr-1"></i>
-                                                            Gagal
-                                                        </span>
-
-                                                    <?php elseif ($row['status'] === 'expired'): ?>
-
-                                                        <span class="badge badge-secondary">
-                                                            <i class="fas fa-clock mr-1"></i>
-                                                            Expired
-                                                        </span>
-
-                                                    <?php else: ?>
-
-                                                        <span class="badge badge-warning">
-                                                            <i class="fas fa-clock mr-1"></i>
-                                                            Pending
-                                                        </span>
-
-                                                    <?php endif; ?>
-                                                </td>
-
-                                                <!-- PAID AT -->
-                                                <td>
-                                                    <?php if (!empty($row['paid_at'])): ?>
-
-                                                        <?= date('d-m-Y H:i', strtotime($row['paid_at'])); ?>
-
-                                                    <?php else: ?>
-
-                                                        -
-
-                                                    <?php endif; ?>
-                                                </td>
-
-                                                <!-- ACTION -->
-                                                <td>
-                                                    <?php if ($row['status'] !== 'paid'): ?>
-
-                                                        <button
-                                                            type="button"
-                                                            class="btn btn-primary btn-sm"
-                                                            data-toggle="modal"
-                                                            data-target="#qrisModal<?= (int) $row['id']; ?>"
-                                                        >
-                                                            <i class="fas fa-qrcode mr-1"></i>
-                                                            Bayar QRIS
-                                                        </button>
-
-                                                    <?php else: ?>
-
-                                                        <button
-                                                            type="button"
-                                                            class="btn btn-success btn-sm"
-                                                            disabled
-                                                        >
-                                                            <i class="fas fa-check mr-1"></i>
-                                                            Sudah Dibayar
-                                                        </button>
-
-                                                    <?php endif; ?>
-                                                </td>
-                                            </tr>
-
+                                        <tr>
+                                            <td><?= $no++; ?></td>
+                                            <td><b class="text-white" style="font-family: monospace; color: var(--lux-gold) !important;"><?= htmlspecialchars($row['booking_code']); ?></b></td>
+                                            <td><?= htmlspecialchars($row['customer_name']); ?></td>
+                                            <td><?= htmlspecialchars($row['service_name'] ?? 'Cukur Standar'); ?></td>
+                                            <td><b class="text-white">Rp <?= number_format($row['price'] ?? 50000, 0, ',', '.'); ?></b></td>
+                                            <td><span class="badge badge-secondary p-2">QRIS GHD</span></td>
+                                            <td>
+                                                <?php if ($status == 'approved' || $status == 'completed'): ?>
+                                                    <span class="badge-approved"><i class="fas fa-check-circle mr-1"></i> Lunas (Paid)</span>
+                                                <?php elseif ($status == 'cancelled'): ?>
+                                                    <span class="badge-cancelled"><i class="fas fa-ban mr-1"></i> Dibatalkan</span>
+                                                <?php else: ?>
+                                                    <span class="badge-pending"><i class="fas fa-hourglass-half mr-1"></i> Menunggu Konfirmasi</span>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
                                         <?php endwhile; ?>
                                     </tbody>
                                 </table>
                             </div>
-
                         </div>
                     </div>
-
                 </div>
             </div>
-
-            <!-- FOOTER -->
-            <footer class="sticky-footer bg-white">
-                <div class="container my-auto">
-                    <div class="copyright text-center my-auto">
-                        <span>
-                            Copyright &copy;
-                            GHD Barbershop
-                            <?= date('Y'); ?>
-                        </span>
-                    </div>
-                </div>
-            </footer>
-
         </div>
     </div>
-
-    <!-- QRIS MODALS
-         Diletakkan di luar <table> agar HTML valid.
-    -->
-    <?php
-    mysqli_data_seek($result, 0);
-
-    while ($row = mysqli_fetch_assoc($result)):
-    ?>
-        <div
-            class="modal fade"
-            id="qrisModal<?= (int) $row['id']; ?>"
-            tabindex="-1"
-            role="dialog"
-            aria-hidden="true"
-        >
-            <div
-                class="modal-dialog modal-dialog-centered"
-                role="document"
-            >
-                <div class="modal-content">
-
-                    <!-- MODAL HEADER -->
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <i class="fas fa-qrcode mr-2"></i>
-                            Pembayaran QRIS
-                        </h5>
-
-                        <button
-                            type="button"
-                            class="close"
-                            data-dismiss="modal"
-                            aria-label="Close"
-                        >
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-
-                    <!-- MODAL BODY -->
-                    <div class="modal-body text-center">
-
-                        <h5 class="font-weight-bold">
-                            GHD BARBERSHOP
-                        </h5>
-
-                        <p class="text-muted mb-2">
-                            Kode Booking
-                        </p>
-
-                        <h5 class="text-primary">
-                            <?= htmlspecialchars($row['booking_code']); ?>
-                        </h5>
-
-                        <hr>
-
-                        <p class="mb-1">
-                            Total Pembayaran
-                        </p>
-
-                        <h3 class="font-weight-bold text-success">
-                            Rp <?= number_format($row['amount'], 0, ',', '.'); ?>
-                        </h3>
-
-                        <div class="mt-3 mb-3">
-                            <!--
-                                GANTI FILE INI DENGAN GAMBAR QRIS
-                                MILIK BARBERSHOP.
-                            -->
-                            <img
-                                src="foto/qriss1.jpeg"
-                                alt="QRIS GHD Barbershop"
-                                class="img-fluid"
-                                style="width: 250px; height: 250px; object-fit: contain;"
-                            >
-                        </div>
-
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle mr-1"></i>
-                            Scan QRIS menggunakan aplikasi pembayaran
-                            yang mendukung QRIS.
-                        </div>
-
-                        <p class="small text-muted mb-0">
-                            Setelah pembayaran, admin dapat memperbarui
-                            status pembayaran.
-                        </p>
-
-                    </div>
-
-                    <!-- MODAL FOOTER -->
-                    <div class="modal-footer">
-                        <button
-                            type="button"
-                            class="btn btn-secondary"
-                            data-dismiss="modal"
-                        >
-                            Tutup
-                        </button>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    <?php endwhile; ?>
-
-    <!-- SCROLL TO TOP -->
-    <a
-        class="scroll-to-top rounded"
-        href="#page-top"
-    >
-        <i class="fas fa-angle-up"></i>
-    </a>
-
-    <!-- JAVASCRIPT -->
     <script src="vendor/jquery/jquery.min.js"></script>
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
     <script src="js/sb-admin-2.min.js"></script>
-
-    <!-- DataTables -->
-    <script src="vendor/datatables/jquery.dataTables.min.js"></script>
-    <script src="vendor/datatables/dataTables.bootstrap4.min.js"></script>
-
-    <script>
-        $(document).ready(function () {
-            $('#paymentTable').DataTable();
-        });
-    </script>
-
 </body>
-
 </html>
-'''
-

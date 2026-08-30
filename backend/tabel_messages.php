@@ -1,808 +1,160 @@
 <?php
-
-require_once 'connection.php';
-
-
-/* =========================================================
-   READ / UNREAD
-   ========================================================= */
-
-if (isset($_GET['action'], $_GET['id'])) {
-
-    $id = (int) $_GET['id'];
-    $action = $_GET['action'];
-
-    if ($id > 0) {
-
-        if ($action === 'read') {
-
-            $stmt = mysqli_prepare(
-                $koneksi,
-                "UPDATE messages
-                 SET status = 'read'
-                 WHERE id_message = ?"
-            );
-
-            mysqli_stmt_bind_param($stmt, "i", $id);
-            mysqli_stmt_execute($stmt);
-            mysqli_stmt_close($stmt);
-        } elseif ($action === 'unread') {
-
-            $stmt = mysqli_prepare(
-                $koneksi,
-                "UPDATE messages
-                 SET status = 'unread'
-                 WHERE id_message = ?"
-            );
-
-            mysqli_stmt_bind_param($stmt, "i", $id);
-            mysqli_stmt_execute($stmt);
-            mysqli_stmt_close($stmt);
-        }
-    }
-
-    header("Location: tabel_messages.php");
+session_start();
+if (!isset($_SESSION['status']) || $_SESSION['status'] !== "login") {
+    header("Location: login.php?pesan=belum_login");
     exit;
 }
 
+include "connection.php";
 
-/* =========================================================
-   HAPUS MESSAGE
-   ========================================================= */
+// Deteksi nama kolom primary key atau ID yang ada di tabel messages
+$cek_kolom = mysqli_query($koneksi, "SHOW COLUMNS FROM messages LIKE 'id'");
+$id_col = (mysqli_num_rows($cek_kolom) > 0) ? 'id' : 'id_message';
 
-if (isset($_GET['delete'])) {
-
-    $id = (int) $_GET['delete'];
-
-    if ($id > 0) {
-
-        $stmt = mysqli_prepare(
-            $koneksi,
-            "DELETE FROM messages
-             WHERE id_message = ?"
-        );
-
-        mysqli_stmt_bind_param($stmt, "i", $id);
-        mysqli_stmt_execute($stmt);
-        mysqli_stmt_close($stmt);
-    }
-
-    header("Location: tabel_messages.php");
-    exit;
-}
-
-
-/* =========================================================
-   AMBIL DATA MESSAGE
-   ========================================================= */
-
-$query = "
-    SELECT
-        id_message,
-        name,
-        email,
-        phone,
-        subject,
-        message,
-        status,
-        created_at
-    FROM messages
-    ORDER BY created_at DESC
-";
-
-$result = mysqli_query($koneksi, $query);
-
-if (!$result) {
-    die("Query gagal: " . mysqli_error($koneksi));
-}
-
-
-/* =========================================================
-   HITUNG UNREAD
-   ========================================================= */
-
-$unreadQuery = mysqli_query(
-    $koneksi,
-    "SELECT COUNT(*) AS total
-     FROM messages
-     WHERE status = 'unread'"
-);
-
-$unreadData = mysqli_fetch_assoc($unreadQuery);
-
-$totalUnread = (int) $unreadData['total'];
-
+$query = mysqli_query($koneksi, "SELECT * FROM messages ORDER BY $id_col DESC");
 ?>
 
 <!DOCTYPE html>
-
-<html lang="en">
-
+<html lang="id">
 <head>
+    <meta charset="utf-8">
+    <title>Data Messages & Balas | GHD Barbershop</title>
+    <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="css/sb-admin-2.min.css" rel="stylesheet">
+    <link href="css/ghd-backend.css" rel="stylesheet">
+    <style>
+        :root { --lux-black: #050505; --lux-surface: #121212; --lux-gold: #c5a059; --lux-white: #f8f8f8; --lux-text: #a3a3a3; }
+        body { background: var(--lux-black) !important; color: var(--lux-text) !important; font-family: 'Montserrat', sans-serif; }
+        h1, h2, h3, h4, .card-header h6 { font-family: 'Playfair Display', serif; color: var(--lux-white) !important; }
+        .card { background: var(--lux-surface) !important; border: 1px solid rgba(197, 160, 89, 0.2) !important; box-shadow: 0 15px 35px rgba(0,0,0,0.8); }
+        .card-header { background: #080808 !important; border-bottom: 1px solid rgba(197, 160, 89, 0.2) !important; }
+        .table { color: var(--lux-text) !important; background-color: var(--lux-surface); }
+        .table th, .table td { border-color: rgba(197, 160, 89, 0.15) !important; vertical-align: middle; }
+        .table th { color: var(--lux-gold) !important; font-family: 'Playfair Display', serif; letter-spacing: 1px; background: #080808; }
+        .table-striped tbody tr:nth-of-type(odd) { background-color: rgba(255, 255, 255, 0.02); }
+        .table-hover tbody tr:hover { background-color: rgba(197, 160, 89, 0.05); color: var(--lux-white); }
+        
+        /* Tombol Aksi Mewah */
+        .btn-wa-lux { 
+            background: rgba(40, 167, 69, 0.15); 
+            color: #28a745; 
+            border: 1px solid #28a745; 
+            font-size: 11px; 
+            font-weight: 600; 
+            text-transform: uppercase; 
+            padding: 5px 10px; 
+            border-radius: 4px; 
+            transition: 0.3s; 
+            text-decoration: none; 
+            display: inline-block; 
+        }
+        .btn-wa-lux:hover { background: #28a745; color: #fff; text-decoration: none; box-shadow: 0 0 10px rgba(40,167,69,0.4); }
 
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0">
-
-    <title>Messages - GHD Barbershop</title>
-
-
-    <!-- Font Awesome -->
-    <link
-        href="vendor/fontawesome-free/css/all.min.css"
-        rel="stylesheet">
-
-
-    <!-- SB Admin 2 -->
-    <link
-        href="css/sb-admin-2.min.css"
-        rel="stylesheet">
-
-
-    <!-- DataTables -->
-    <link
-        href="vendor/datatables/dataTables.bootstrap4.min.css"
-        rel="stylesheet">
-
+        .btn-danger-lux { 
+            background: rgba(220, 53, 69, 0.15); 
+            color: #ff6b6b; 
+            border: 1px solid #dc3545; 
+            font-size: 11px; 
+            font-weight: 600; 
+            text-transform: uppercase; 
+            padding: 5px 10px; 
+            border-radius: 4px; 
+            transition: 0.3s; 
+            text-decoration: none; 
+            display: inline-block; 
+        }
+        .btn-danger-lux:hover { background: #dc3545; color: #fff; text-decoration: none; box-shadow: 0 0 10px rgba(220,53,69,0.4); }
+    </style>
 </head>
-
-
 <body id="page-top">
-
-
     <div id="wrapper">
-
-
-        <!-- =====================================================
-         SIDEBAR
-         ===================================================== -->
-
-        <?php include 'sidebar.php'; ?>
-
-
-        <!-- =====================================================
-         CONTENT WRAPPER
-         ===================================================== -->
-
-        <div
-            id="content-wrapper"
-            class="d-flex flex-column">
-
-
+        <?php include "sidebar.php"; ?>
+        <div id="content-wrapper" class="d-flex flex-column" style="background: var(--lux-black);">
             <div id="content">
+                <?php include "topbar.php"; ?>
 
-
-                <!-- TOPBAR -->
-
-                <?php include 'topbar.php'; ?>
-
-
-                <!-- =================================================
-                 CONTAINER
-                 ================================================= -->
-
-                <div class="container-fluid">
-
-
-                    <!-- PAGE HEADING -->
-
-                    <div
-                        class="d-sm-flex align-items-center justify-content-between mb-4">
-
+                <div class="container-fluid py-4">
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <div>
-
-                            <h1 class="h3 mb-1 text-gray-800">
-                                Messages
-                            </h1>
-
-                            <p class="mb-0 text-muted">
-                                Pesan yang dikirim oleh pelanggan.
-                            </p>
-
+                            <span style="color: var(--lux-gold); font-size: 11px; letter-spacing: 3px; text-transform: uppercase;">Customer Inbox</span>
+                            <h1 class="h3 mb-0" style="color: var(--lux-white);">Data Pesan Masuk & Balas (Messages)</h1>
                         </div>
-
-
-                        <!-- UNREAD -->
-
-                        <div>
-
-                            <span class="badge badge-danger px-3 py-2">
-
-                                <i class="fas fa-envelope mr-1"></i>
-
-                                <?= $totalUnread; ?>
-
-                                Pesan Belum Dibaca
-
-                            </span>
-
-                        </div>
-
                     </div>
-
-
-                    <!-- =================================================
-                     CARD
-                     ================================================= -->
 
                     <div class="card shadow mb-4">
-
-
-                        <!-- HEADER -->
-
                         <div class="card-header py-3">
-
-                            <h6
-                                class="m-0 font-weight-bold text-primary">
-
-                                <i class="fas fa-envelope mr-2"></i>
-
-                                Data Messages
-
-                            </h6>
-
+                            <h6 class="m-0 font-weight-bold" style="color: var(--lux-gold);">Daftar Pesan dari Pengunjung Website</h6>
                         </div>
-
-
-                        <!-- BODY -->
-
                         <div class="card-body">
-
-
                             <div class="table-responsive">
-
-
-                                <table
-                                    class="table table-bordered table-hover"
-                                    id="messageTable"
-                                    width="100%"
-                                    cellspacing="0">
-
-
+                                <table class="table table-striped table-hover" width="100%" cellspacing="0">
                                     <thead>
-
                                         <tr>
-
                                             <th>No</th>
-
-                                            <th>Nama</th>
-
-                                            <th>Email</th>
-
-                                            <th>No. HP</th>
-
-                                            <th>Subject</th>
-
-                                            <th>Pesan</th>
-
-                                            <th>Tanggal</th>
-
-                                            <th>Status</th>
-
+                                            <th>Nama Pengirim</th>
+                                            <th>Kontak (WA / Email)</th>
+                                            <th>Pesan Masuk</th>
+                                            <th>Waktu</th>
                                             <th>Aksi</th>
-
                                         </tr>
-
                                     </thead>
-
-
                                     <tbody>
+                                        <?php if ($query && mysqli_num_rows($query) > 0): ?>
+                                            <?php $no = 1; while ($row = mysqli_fetch_assoc($query)) : 
+                                                $msg_id = $row['id'] ?? ($row['id_message'] ?? 0);
+                                                $nama_pengirim = htmlspecialchars($row['name'] ?? ($row['nama'] ?? 'Pelanggan'));
+                                                $pesan_masuk = htmlspecialchars($row['message'] ?? ($row['pesan'] ?? '-'));
+                                                $kontak = htmlspecialchars($row['phone'] ?? ($row['whatsapp'] ?? ($row['email'] ?? '-')));
+                                                
+                                                // Format nomor WhatsApp untuk tombol balas (bersihkan karakter selain angka)
+                                                $raw_phone = preg_replace('/[^0-9]/', '', $kontak);
+                                                // Jika nomor diawali 0, ubah jadi 62
+                                                if (substr($raw_phone, 0, 1) == '0') {
+                                                    $raw_phone = '62' . substr($raw_phone, 1);
+                                                }
 
-
-                                        <?php
-
-                                        $no = 1;
-
-                                        while ($row = mysqli_fetch_assoc($result)):
-
-                                            $id = (int) $row['id_message'];
-
-                                            $status = $row['status'];
-
-                                        ?>
-
-
+                                                // Pesan balasan otomatis saat tombol WhatsApp diklik
+                                                $url_wa = "https://api.whatsapp.com/send?phone=" . $raw_phone . "&text=Halo%20" . urlencode($nama_pengirim) . ",%20terima%20kasih%20telah%20menghubungi%20GHD%20Barbershop.%20Menanggapi%20pesan%20Anda:%20%22" . urlencode($pesan_masuk) . "%22...%0A%0ABagaimana%20ada%20yang%20bisa%20kami%20bantu?";
+                                            ?>
                                             <tr>
-
-
-                                                <!-- NO -->
-
+                                                <td><?= $no++; ?></td>
+                                                <td><b class="text-white"><?= $nama_pengirim; ?></b></td>
                                                 <td>
-
-                                                    <?= $no++; ?>
-
+                                                    <?= $kontak; ?>
                                                 </td>
-
-
-                                                <!-- NAMA -->
-
                                                 <td>
-
-                                                    <?= htmlspecialchars(
-                                                        $row['name']
-                                                    ); ?>
-
+                                                    <div style="max-width: 280px; white-space: normal; word-wrap: break-word;">
+                                                        <?= $pesan_masuk; ?>
+                                                    </div>
                                                 </td>
-
-
-                                                <!-- EMAIL -->
-
+                                                <td style="font-size: 11px; color: #888;"><?= htmlspecialchars($row['created_at'] ?? '-'); ?></td>
                                                 <td>
-
-                                                    <?= htmlspecialchars(
-                                                        $row['email']
-                                                    ); ?>
-
+                                                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                                                        <?php if(!empty($raw_phone) && strlen($raw_phone) >= 9): ?>
+                                                            <a href="<?= $url_wa; ?>" target="_blank" class="btn-wa-lux" title="Balas via WhatsApp"><i class="fab fa-whatsapp mr-1"></i> Balas</a>
+                                                        <?php endif; ?>
+                                                        <a href="hapus_message.php?id=<?= $msg_id; ?>" class="btn-danger-lux" onclick="return confirm('Yakin ingin menghapus pesan ini?')" title="Hapus Pesan"><i class="fas fa-trash mr-1"></i> Hapus</a>
+                                                    </div>
                                                 </td>
-
-
-                                                <!-- PHONE -->
-
-                                                <td>
-
-                                                    <?= !empty($row['phone'])
-                                                        ? htmlspecialchars(
-                                                            $row['phone']
-                                                        )
-                                                        : '-';
-                                                    ?>
-
-                                                </td>
-
-
-                                                <!-- SUBJECT -->
-
-                                                <td>
-
-                                                    <?= htmlspecialchars(
-                                                        $row['subject']
-                                                    ); ?>
-
-                                                </td>
-
-
-                                                <!-- MESSAGE -->
-
-                                                <td>
-
-                                                    <span
-                                                        class="d-inline-block text-truncate"
-                                                        style="max-width: 250px;"
-                                                        title="<?= htmlspecialchars(
-                                                                    $row['message']
-                                                                ); ?>">
-
-                                                        <?= htmlspecialchars(
-                                                            $row['message']
-                                                        ); ?>
-
-                                                    </span>
-
-                                                </td>
-
-
-                                                <!-- DATE -->
-
-                                                <td>
-
-                                                    <?= date(
-                                                        'd-m-Y H:i',
-                                                        strtotime(
-                                                            $row['created_at']
-                                                        )
-                                                    ); ?>
-
-                                                </td>
-
-
-                                                <!-- STATUS -->
-
-                                                <td>
-
-                                                    <?php if ($status === 'read'): ?>
-
-                                                        <span
-                                                            class="badge badge-success">
-
-                                                            <i
-                                                                class="fas fa-envelope-open mr-1"></i>
-
-                                                            Read
-
-                                                        </span>
-
-                                                    <?php else: ?>
-
-                                                        <span
-                                                            class="badge badge-warning">
-
-                                                            <i
-                                                                class="fas fa-envelope mr-1"></i>
-
-                                                            Unread
-
-                                                        </span>
-
-                                                    <?php endif; ?>
-
-                                                </td>
-
-
-                                                <!-- AKSI -->
-
-                                                <td
-                                                    class="text-center"
-                                                    style="white-space: nowrap;">
-
-
-                                                    <!-- LIHAT -->
-
-                                                    <button
-                                                        type="button"
-                                                        class="btn btn-info btn-sm"
-                                                        data-toggle="modal"
-                                                        data-target="#messageModal<?= $id; ?>"
-                                                        title="Lihat pesan">
-
-                                                        <i class="fas fa-eye"></i>
-
-                                                    </button>
-
-
-                                                    <!-- READ -->
-
-                                                    <?php if ($status === 'unread'): ?>
-
-                                                        <a
-                                                            href="tabel_messages.php?action=read&id=<?= $id; ?>"
-                                                            class="btn btn-success btn-sm"
-                                                            title="Tandai sudah dibaca">
-
-                                                            <i
-                                                                class="fas fa-envelope-open"></i>
-
-                                                        </a>
-
-                                                    <?php else: ?>
-
-
-                                                        <!-- UNREAD -->
-
-                                                        <a
-                                                            href="tabel_messages.php?action=unread&id=<?= $id; ?>"
-                                                            class="btn btn-warning btn-sm"
-                                                            title="Tandai belum dibaca">
-
-                                                            <i
-                                                                class="fas fa-envelope"></i>
-
-                                                        </a>
-
-                                                    <?php endif; ?>
-
-
-                                                    <!-- DELETE -->
-
-                                                    <a
-                                                        href="tabel_messages.php?delete=<?= $id; ?>"
-                                                        class="btn btn-danger btn-sm"
-                                                        title="Hapus pesan"
-                                                        onclick="return confirm(
-                                                    'Yakin ingin menghapus pesan ini?'
-                                                );">
-
-                                                        <i class="fas fa-trash"></i>
-
-                                                    </a>
-
-
-                                                </td>
-
-
                                             </tr>
-
-
-                                        <?php endwhile; ?>
-
-
+                                            <?php endwhile; ?>
+                                        <?php else: ?>
+                                            <tr>
+                                                <td colspan="6" class="text-center py-4 text-muted">Belum ada pesan masuk.</td>
+                                            </tr>
+                                        <?php endif; ?>
                                     </tbody>
-
                                 </table>
-
                             </div>
-
                         </div>
-
                     </div>
-
-
                 </div>
-
-
             </div>
-
-
-            <!-- =====================================================
-             FOOTER
-             ===================================================== -->
-
-            <footer class="sticky-footer bg-white">
-
-                <div class="container my-auto">
-
-                    <div
-                        class="copyright text-center my-auto">
-
-                        <span>
-
-                            Copyright &copy;
-                            GHD Barbershop
-                            <?= date('Y'); ?>
-
-                        </span>
-
-                    </div>
-
-                </div>
-
-            </footer>
-
-
         </div>
-
     </div>
-
-
-    <!-- =========================================================
-     MODAL DETAIL PESAN
-     ========================================================= -->
-
-    <?php
-
-    mysqli_data_seek($result, 0);
-
-    while ($row = mysqli_fetch_assoc($result)):
-
-        $id = (int) $row['id_message'];
-
-    ?>
-
-        <div
-            class="modal fade"
-            id="messageModal<?= $id; ?>"
-            tabindex="-1"
-            role="dialog"
-            aria-hidden="true">
-
-            <div
-                class="modal-dialog modal-dialog-centered"
-                role="document">
-
-                <div class="modal-content">
-
-
-                    <!-- HEADER -->
-
-                    <div class="modal-header">
-
-                        <h5 class="modal-title">
-
-                            <i class="fas fa-envelope mr-2"></i>
-
-                            Detail Pesan
-
-                        </h5>
-
-
-                        <button
-                            type="button"
-                            class="close"
-                            data-dismiss="modal">
-
-                            <span>
-                                &times;
-                            </span>
-
-                        </button>
-
-                    </div>
-
-
-                    <!-- BODY -->
-
-                    <div class="modal-body">
-
-
-                        <div class="mb-3">
-
-                            <small class="text-muted">
-                                Nama
-                            </small>
-
-                            <div class="font-weight-bold">
-
-                                <?= htmlspecialchars(
-                                    $row['name']
-                                ); ?>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="mb-3">
-
-                            <small class="text-muted">
-                                Email
-                            </small>
-
-                            <div>
-
-                                <?= htmlspecialchars(
-                                    $row['email']
-                                ); ?>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="mb-3">
-
-                            <small class="text-muted">
-                                No. HP
-                            </small>
-
-                            <div>
-
-                                <?= !empty($row['phone'])
-                                    ? htmlspecialchars(
-                                        $row['phone']
-                                    )
-                                    : '-';
-                                ?>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="mb-3">
-
-                            <small class="text-muted">
-                                Subject
-                            </small>
-
-                            <div class="font-weight-bold">
-
-                                <?= htmlspecialchars(
-                                    $row['subject']
-                                ); ?>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="mb-3">
-
-                            <small class="text-muted">
-                                Pesan
-                            </small>
-
-                            <div
-                                class="border rounded p-3 bg-light"
-                                style="white-space: pre-wrap;">
-
-                                <?= htmlspecialchars(
-                                    $row['message']
-                                ); ?>
-
-                            </div>
-
-                        </div>
-
-
-                        <div>
-
-                            <small class="text-muted">
-                                Dikirim
-                            </small>
-
-                            <div>
-
-                                <?= date(
-                                    'd-m-Y H:i',
-                                    strtotime(
-                                        $row['created_at']
-                                    )
-                                ); ?>
-
-                            </div>
-
-                        </div>
-
-
-                    </div>
-
-
-                    <!-- FOOTER -->
-
-                    <div class="modal-footer">
-
-                        <button
-                            type="button"
-                            class="btn btn-secondary"
-                            data-dismiss="modal">
-
-                            Tutup
-
-                        </button>
-
-                    </div>
-
-
-                </div>
-
-            </div>
-
-        </div>
-
-    <?php endwhile; ?>
-
-
-    <!-- =========================================================
-     SCROLL TOP
-     ========================================================= -->
-
-    <a
-        class="scroll-to-top rounded"
-        href="#page-top">
-
-        <i class="fas fa-angle-up"></i>
-
-    </a>
-
-
-    <!-- =========================================================
-     JAVASCRIPT
-     ========================================================= -->
-
     <script src="vendor/jquery/jquery.min.js"></script>
-
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-
-    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
-
     <script src="js/sb-admin-2.min.js"></script>
-
-
-    <!-- DATATABLES -->
-
-    <script src="vendor/datatables/jquery.dataTables.min.js"></script>
-
-    <script src="vendor/datatables/dataTables.bootstrap4.min.js"></script>
-
-
-    <script>
-        $(document).ready(function() {
-
-            $('#messageTable').DataTable({
-
-                pageLength: 10,
-
-                order: [
-                    [0, 'asc']
-                ]
-
-            });
-
-        });
-    </script>
-
-
 </body>
-
 </html>

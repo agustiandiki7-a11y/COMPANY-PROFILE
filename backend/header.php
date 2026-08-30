@@ -32,5 +32,16 @@
 
         <!-- Google Fonts yang Sama Persis dengan Frontend -->
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Google Fonts & Tema GHD Backend -->
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="css/ghd-backend.css" rel="stylesheet">
+<?php
+// Pastikan koneksi sudah ada
+// Ambil data logo dari tabel profile
+$query_favicon = mysqli_query($koneksi, "SELECT logo FROM profile LIMIT 1");
+$row_fav = $query_favicon ? mysqli_fetch_assoc($query_favicon) : [];
+$logo_file = !empty($row_fav['logo']) ? '../backend/foto/' . $row_fav['logo'] : 'assets/img/logo.ico';
+?>
+<link rel="icon" type="image/x-icon" href="<?= $logo_file; ?>">
 
 </head>
