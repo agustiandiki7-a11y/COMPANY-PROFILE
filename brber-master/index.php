@@ -690,55 +690,72 @@ $query_testimonials = mysqli_query($koneksi, "SELECT * FROM testimonials ORDER B
         text-decoration: none;
     }
 </style>
-        <!-- CONTACT -->
-        <section id="contact">
-            <div class="container">
-                <div class="row align-items-center">
-                    <div class="col-lg-5 mb-5 mb-lg-0">
-                        <div class="section-tittle mb-5">
-                            <span>Get in Touch</span>
-                            <h2 style="font-size: 36px;">Visit Our Lounge</h2>
-                        </div>
+        <!-- Bagian Contact / Visit Our Lounge (Luxury Modern Frontend) -->
+<div class="row align-items-center py-5">
+    
+    <!-- Kolom Kiri: Informasi Kontak dengan Kartu Berkelas -->
+    <div class="col-lg-5 mb-5 mb-lg-0">
+        <div style="padding-right: 15px;">
+            <span style="color: #c5a059; font-size: 12px; font-weight: 600; letter-spacing: 4px; text-transform: uppercase; display: block; margin-bottom: 12px;">Get In Touch</span>
+            <h2 style="font-family: 'Playfair Display', serif; color: #f8f8f8; font-size: 42px; font-weight: 700; margin-bottom: 40px; line-height: 1.2;">Visit Our Lounge</h2>
 
-                        <div class="contact-box">
-                            <div class="contact-icon"><i class="fas fa-map-marker-alt"></i></div>
-                            <div>
-                                <h4>Address</h4>
-                                <p><?php echo nl2br(e(isset($p['address']) ? $p['address'] : '')); ?></p>
-                            </div>
-                        </div>
-
-                        <div class="contact-box">
-                            <div class="contact-icon"><i class="fas fa-phone"></i></div>
-                            <div>
-                                <h4>Reservation</h4>
-                                <p><?php echo e(isset($p['phone']) ? $p['phone'] : ''); ?></p>
-                                <?php if (!empty($p['phone'])): ?>
-                                    <a href="https://wa.me/<?php echo preg_replace('/[^0-9]/', '', $p['phone']); ?>" target="_blank" class="contact-link">Book via WhatsApp</a>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-
-                        <div class="contact-box">
-                            <div class="contact-icon"><i class="fas fa-envelope"></i></div>
-                            <div>
-                                <h4>Email</h4>
-                                <p><?php echo e(isset($p['email']) ? $p['email'] : ''); ?></p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-lg-7">
-                        <div class="map-wrapper shadow-lg">
-                            <iframe
-                                src="https://www.google.com/maps?q=<?php echo urlencode((isset($p['address']) ? $p['address'] : '') . ', Banjar, Jawa Barat, Indonesia'); ?>&z=15&output=embed"
-                                width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
-                            </iframe>
-                        </div>
-                    </div>
+            <!-- Box Alamat -->
+            <div class="d-flex align-items-start mb-4 p-3" style="background: rgba(18, 18, 18, 0.6); border-left: 3px solid #c5a059; border-radius: 0 8px 8px 0; transition: 0.3s;" onmouseover="this.style.background='rgba(197, 160, 89, 0.05)'" onmouseout="this.style.background='rgba(18, 18, 18, 0.6)'">
+                <div class="mr-3 mt-1" style="color: #c5a059; font-size: 20px;">
+                    <i class="fas fa-map-marker-alt"></i>
+                </div>
+                <div>
+                    <h5 style="color: #f8f8f8; font-size: 15px; font-weight: 600; margin-bottom: 6px; font-family: 'Playfair Display', serif;">Address Location</h5>
+                    <p style="color: #b0b0b0; font-size: 13px; line-height: 1.7; margin-bottom: 0;">
+                        Jl. Tirto Sari No.40, RT.04/RW.21, Patukan, Ambarketawang, Kec. Gamping, Kabupaten Sleman, Daerah Istimewa Yogyakarta 55294
+                    </p>
                 </div>
             </div>
-        </section>
+
+            <!-- Box Reservasi & WhatsApp -->
+            <div class="d-flex align-items-start mb-4 p-3" style="background: rgba(18, 18, 18, 0.6); border-left: 3px solid #c5a059; border-radius: 0 8px 8px 0; transition: 0.3s;" onmouseover="this.style.background='rgba(197, 160, 89, 0.05)'" onmouseout="this.style.background='rgba(18, 18, 18, 0.6)'">
+                <div class="mr-3 mt-1" style="color: #c5a059; font-size: 20px;">
+                    <i class="fas fa-phone-alt"></i>
+                </div>
+                <div>
+                    <h5 style="color: #f8f8f8; font-size: 15px; font-weight: 600; margin-bottom: 6px; font-family: 'Playfair Display', serif;">Direct Reservation</h5>
+                    <p style="color: #f8f8f8; font-size: 16px; font-weight: 700; margin-bottom: 8px; letter-spacing: 0.5px;">
+                        085864422409
+                    </p>
+                    <a href="https://wa.me/6285864422409" target="_blank" style="background: rgba(197, 160, 89, 0.15); color: #c5a059; border: 1px solid rgba(197, 160, 89, 0.4); padding: 6px 14px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: 0.3s;" onmouseover="this.style.background='#c5a059'; this.style.color='#050505';" onmouseout="this.style.background='rgba(197, 160, 89, 0.15)'; this.style.color='#c5a059';">
+                        <i class="fab fa-whatsapp"></i> Book Via WhatsApp
+                    </a>
+                </div>
+            </div>
+
+            <!-- Box Email -->
+            <div class="d-flex align-items-start p-3" style="background: rgba(18, 18, 18, 0.6); border-left: 3px solid #c5a059; border-radius: 0 8px 8px 0; transition: 0.3s;" onmouseover="this.style.background='rgba(197, 160, 89, 0.05)'" onmouseout="this.style.background='rgba(18, 18, 18, 0.6)'">
+                <div class="mr-3 mt-1" style="color: #c5a059; font-size: 20px;">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div>
+                    <h5 style="color: #f8f8f8; font-size: 15px; font-weight: 600; margin-bottom: 6px; font-family: 'Playfair Display', serif;">Email Support</h5>
+                    <a href="mailto:ghdbarbershop@gmail.com" style="color: #b0b0b0; font-size: 13px; text-decoration: none; transition: 0.3s;" onmouseover="this.style.color='#c5a059'" onmouseout="this.style.color='#b0b0b0'">
+                        ghdbarbershop@gmail.com
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Kolom Kanan: Google Maps dengan Bingkai Mewah & Efek Elegan -->
+    <div class="col-lg-7">
+        <div style="background: #121212; border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 14px; padding: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.7); position: relative; overflow: hidden;">
+            
+            <!-- Aksen Garis Emas Halus di Atas Maps -->
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, transparent, #c5a059, transparent);"></div>
+            
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3952.924844391629!2d110.3340576!3d-7.794403!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e7af75b03708e01%3A0x6b63d91cf97cf487!2sKolbano%20Coffee%20%20Eatery!5f0.5!4v1680000000000!5m2!1sen!2sid" width="100%" height="420" style="border:0; border-radius: 10px; filter: grayscale(20%) contrast(110%);" allowfullscreen="" loading="lazy"></iframe>
+        </div>
+    </div>
+
+</div>
 
     </main>
 
